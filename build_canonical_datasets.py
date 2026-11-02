@@ -3,7 +3,7 @@ Builds canonical observation datasets from audited research sources:
 1. data/processed/canonical_particle_distance.csv
    - 69 authentic experimental runs from JFSP 15-1-04-4 (vegetative & structural).
    - Independent fuel-level experimental groups.
-   - Exact SI units and provenance.
+   - Exact SI units and full statistical distribution moments and environmental features.
 2. data/processed/canonical_firebrand_flux.csv
    - Acoustic firebrand arrivals from Zenodo 4837617.
 """
@@ -32,6 +32,7 @@ def main():
             record_id = f"rec_jfsp_{category}_{fuel}_{wind}"
             
             dist_rows.append({
+                # Canonical standard base fields
                 "record_id": record_id,
                 "source_id": r["source_id"],
                 "source_file": r["source_file"],
@@ -55,7 +56,23 @@ def main():
                 "mass_kg": r["mass_median_kg"],
                 "projected_area_m2": r["area_median_m2"],
                 "wind_speed_m_s": r["wind_speed_m_s"],
-                "fuel_type": fuel
+                "fuel_type": fuel,
+                # Enriched scientific moments & environmental metadata
+                "gust_peak_m_s": r["gust_peak_m_s"],
+                "moisture_content_percent": r["moisture_content_percent"],
+                "sample_size": r["sample_size"],
+                "distance_mean_m": r["distance_mean_m"],
+                "distance_std_m": r["distance_std_m"],
+                "distance_skewness": r["distance_skewness"],
+                "area_mean_m2": r["area_mean_m2"],
+                "area_std_m2": r["area_std_m2"],
+                "area_skewness": r["area_skewness"],
+                "mass_mean_kg": r["mass_mean_kg"],
+                "mass_std_kg": r["mass_std_kg"],
+                "mass_skewness": r["mass_skewness"],
+                "corr_mass_area": r["corr_mass_area"],
+                "corr_mass_dist": r["corr_mass_dist"],
+                "corr_area_dist": r["corr_area_dist"]
             })
 
     os.makedirs(os.path.dirname(DISTANCE_CSV), exist_ok=True)
@@ -98,13 +115,17 @@ def main():
                 "mass_kg": "",
                 "projected_area_m2": "",
                 "wind_speed_m_s": "4.2",
-                "fuel_type": "pine_understory"
+                "fuel_type": "mixed_pine_shrub"
             })
-            with open(FLUX_CSV, "w", newline="", encoding="utf-8") as f:
-                writer = csv.DictWriter(f, fieldnames=fields)
-                writer.writeheader()
-                writer.writerows(flux_rows)
-            print(f"Saved {len(flux_rows)} firebrand flux records to {FLUX_CSV}")
+
+    if flux_rows:
+        os.makedirs(os.path.dirname(FLUX_CSV), exist_ok=True)
+        flux_fields = list(flux_rows[0].keys())
+        with open(FLUX_CSV, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=flux_fields)
+            writer.writeheader()
+            writer.writerows(flux_rows)
+        print(f"Saved {len(flux_rows)} flux records to {FLUX_CSV}")
 
 if __name__ == "__main__":
     main()

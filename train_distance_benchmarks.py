@@ -1,18 +1,23 @@
 """
-Group-Validated Firebrand Distance Benchmarks.
+Group-Validated Firebrand Distance Benchmarks and Multi-Model Ensemble.
 
-Evaluates multiple model classes on the frozen, group-disjoint partition (data/manifests/split_v1.csv):
+Evaluates multiple model classes and an ensemble on the frozen, group-disjoint partition (data/manifests/split_v1.csv):
 1. Baselines:
    - Global Training Median
    - Fuel-Family Training Median
-2. Prospective Release Models (observable BEFORE flight: wind speed, fuel category, fuel type):
+2. Prospective Operational Models (observable BEFORE flight: wind speed, gust peak, fuel moisture content %, fuel category):
    - Prospective Ridge Regression
    - Prospective Random Forest Regressor
    - Prospective Gradient Boosting Regressor
+   - Prospective Multi-Layer Perceptron (MLP) Regressor
+   - Prospective Quantile Gradient Boosting (P10, P50, P90 bounds)
+   - Prospective Ensemble (Multi-model blend)
 3. Retrospective Particle Models (uses recovered post-landing mass and projected area):
    - Retrospective Ridge Regression
    - Retrospective Random Forest Regressor
    - Retrospective Gradient Boosting Regressor
+   - Retrospective Multi-Layer Perceptron (MLP) Regressor
+   - Retrospective Ensemble (Multi-model blend)
 4. Physical Mechanistic Baseline (ballistic RK4 trajectory simulation under wind).
 
 Strictly isolates test partition until final evaluation. All preprocessors fitted on train only.
@@ -29,6 +34,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.linear_model import Ridge
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+from sklearn.neural_network import MLPRegressor
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from ember_simulation import simulate_single_trajectory
@@ -60,6 +66,8 @@ def load_dataset(data_path, split_path):
             "fuel_type": r["fuel_type"],
             "fuel_category": "vegetative" if "veg" in r["source_id"] else "structural",
             "wind_speed_m_s": float(r["wind_speed_m_s"]),
+            "gust_peak_m_s": float(r.get("gust_peak_m_s", r["wind_speed_m_s"])),
+            "moisture_content_percent": float(r.get("moisture_content_percent", 10.0)),
             "mass_kg": float(r["mass_kg"]),
             "projected_area_m2": float(r["projected_area_m2"]),
             "landing_distance_m": float(r["landing_distance_m"])
@@ -148,11 +156,13 @@ def main():
     test_predictions_dict["pred_category_median"] = test_cat_pred.tolist()
 
     # --- Feature Extraction ---
-    # Prospective features: wind_speed, wind_speed^2, fuel_category
+    # Prospective features: wind_speed, gust_peak, wind_speed^2, moisture_content, fuel_category
     def get_prospective_matrix(recs, enc=None, scaler=None, is_train=False):
         num_feat = np.column_stack([
             [r["wind_speed_m_s"] for r in recs],
-            [r["wind_speed_m_s"]**2 for r in recs]
+            [r["gust_peak_m_s"] for r in recs],
+            [r["wind_speed_m_s"]**2 for r in recs],
+            [r["moisture_content_percent"] for r in recs]
         ])
         cat_raw = np.array([[r["fuel_category"]] for r in recs])
         if is_train:
@@ -170,17 +180,21 @@ def main():
     X_pro_val, _, _ = get_prospective_matrix(val_recs, enc=enc_pro, scaler=scale_pro, is_train=False)
     X_pro_test, _, _ = get_prospective_matrix(test_recs, enc=enc_pro, scaler=scale_pro, is_train=False)
 
-    # Retrospective features: log(mass), log(area), log(area/mass), wind, wind^2, category
+    # Retrospective features: log(mass), log(area), log(area/mass), wind, gust_peak, wind^2, moisture, category
     def get_retrospective_matrix(recs, enc=None, scaler=None, is_train=False):
         mass = np.array([r["mass_kg"] for r in recs])
         area = np.array([r["projected_area_m2"] for r in recs])
         wind = np.array([r["wind_speed_m_s"] for r in recs])
+        gust = np.array([r["gust_peak_m_s"] for r in recs])
+        mc = np.array([r["moisture_content_percent"] for r in recs])
         num_feat = np.column_stack([
             np.log(mass),
             np.log(area),
             np.log(area / mass),
             wind,
-            wind**2
+            gust,
+            wind**2,
+            mc
         ])
         cat_raw = np.array([[r["fuel_category"]] for r in recs])
         if is_train:
@@ -204,7 +218,7 @@ def main():
     p_val_pro_ridge = np.maximum(0, model_pro_ridge.predict(X_pro_val))
     p_test_pro_ridge = np.maximum(0, model_pro_ridge.predict(X_pro_test))
     results["Prospective_Ridge"] = {
-        "description": "Linear Ridge Regression using only wind and fuel category.",
+        "description": "Linear Ridge Regression using wind, gust, moisture, category.",
         "prospective": True,
         "val": compute_metrics(y_val, p_val_pro_ridge),
         "test": compute_metrics(y_test, p_test_pro_ridge)
@@ -217,14 +231,63 @@ def main():
     p_val_pro_rf = np.maximum(0, model_pro_rf.predict(X_pro_val))
     p_test_pro_rf = np.maximum(0, model_pro_rf.predict(X_pro_test))
     results["Prospective_Random_Forest"] = {
-        "description": "Random Forest using only wind and fuel category.",
+        "description": "Random Forest using wind, gust, moisture, category.",
         "prospective": True,
         "val": compute_metrics(y_val, p_val_pro_rf),
         "test": compute_metrics(y_test, p_test_pro_rf)
     }
     test_predictions_dict["pred_prospective_rf"] = p_test_pro_rf.tolist()
 
-    # --- 5. Retrospective Ridge Regression ---
+    # --- 5. Prospective Gradient Boosting ---
+    model_pro_gb = GradientBoostingRegressor(n_estimators=100, max_depth=3, learning_rate=0.05, random_state=args.seed)
+    model_pro_gb.fit(X_pro_train, y_train)
+    p_val_pro_gb = np.maximum(0, model_pro_gb.predict(X_pro_val))
+    p_test_pro_gb = np.maximum(0, model_pro_gb.predict(X_pro_test))
+    results["Prospective_Gradient_Boosting"] = {
+        "description": "Gradient Boosting using wind, gust, moisture, category.",
+        "prospective": True,
+        "val": compute_metrics(y_val, p_val_pro_gb),
+        "test": compute_metrics(y_test, p_test_pro_gb)
+    }
+    test_predictions_dict["pred_prospective_gb"] = p_test_pro_gb.tolist()
+
+    # --- 6. Prospective Multi-Layer Perceptron (Neural Network) ---
+    model_pro_mlp = MLPRegressor(hidden_layer_sizes=(16, 8), max_iter=2000, solver="lbfgs", random_state=args.seed)
+    model_pro_mlp.fit(X_pro_train, y_train)
+    p_val_pro_mlp = np.maximum(0, model_pro_mlp.predict(X_pro_val))
+    p_test_pro_mlp = np.maximum(0, model_pro_mlp.predict(X_pro_test))
+    results["Prospective_MLP_Neural_Net"] = {
+        "description": "Two-layer neural network using wind, gust, moisture, category.",
+        "prospective": True,
+        "val": compute_metrics(y_val, p_val_pro_mlp),
+        "test": compute_metrics(y_test, p_test_pro_mlp)
+    }
+    test_predictions_dict["pred_prospective_mlp"] = p_test_pro_mlp.tolist()
+
+    # --- 7. Prospective Ensemble (Multi-model Average) ---
+    p_val_pro_ens = (p_val_pro_ridge + p_val_pro_rf + p_val_pro_gb + p_val_pro_mlp) / 4.0
+    p_test_pro_ens = (p_test_pro_ridge + p_test_pro_rf + p_test_pro_gb + p_test_pro_mlp) / 4.0
+    results["Prospective_Ensemble"] = {
+        "description": "Ensemble blender averaging Ridge, RF, GBDT, and MLP.",
+        "prospective": True,
+        "val": compute_metrics(y_val, p_val_pro_ens),
+        "test": compute_metrics(y_test, p_test_pro_ens)
+    }
+    test_predictions_dict["pred_prospective_ensemble"] = p_test_pro_ens.tolist()
+
+    # --- 8. Prospective Quantile Bounds (10th & 90th percentile spotting danger envelope) ---
+    model_q10 = GradientBoostingRegressor(loss="quantile", alpha=0.10, n_estimators=100, max_depth=3, random_state=args.seed)
+    model_q10.fit(X_pro_train, y_train)
+    p_test_q10 = np.maximum(0, model_q10.predict(X_pro_test))
+
+    model_q90 = GradientBoostingRegressor(loss="quantile", alpha=0.90, n_estimators=100, max_depth=3, random_state=args.seed)
+    model_q90.fit(X_pro_train, y_train)
+    p_test_q90 = np.maximum(0, model_q90.predict(X_pro_test))
+
+    test_predictions_dict["pred_prospective_p10_bound"] = p_test_q10.tolist()
+    test_predictions_dict["pred_prospective_p90_bound"] = p_test_q90.tolist()
+
+    # --- 9. Retrospective Ridge Regression ---
     model_retro_ridge = Ridge(alpha=1.0)
     model_retro_ridge.fit(X_retro_train, y_train)
     p_val_retro_ridge = np.maximum(0, model_retro_ridge.predict(X_retro_val))
@@ -237,20 +300,57 @@ def main():
     }
     test_predictions_dict["pred_retrospective_ridge"] = p_test_retro_ridge.tolist()
 
-    # --- 6. Retrospective Gradient Boosting ---
+    # --- 10. Retrospective Random Forest ---
+    model_retro_rf = RandomForestRegressor(n_estimators=100, max_depth=3, random_state=args.seed)
+    model_retro_rf.fit(X_retro_train, y_train)
+    p_val_retro_rf = np.maximum(0, model_retro_rf.predict(X_retro_val))
+    p_test_retro_rf = np.maximum(0, model_retro_rf.predict(X_retro_test))
+    results["Retrospective_Random_Forest"] = {
+        "description": "Random Forest on post-landing particle mass, area, wind, moisture.",
+        "prospective": False,
+        "val": compute_metrics(y_val, p_val_retro_rf),
+        "test": compute_metrics(y_test, p_test_retro_rf)
+    }
+    test_predictions_dict["pred_retrospective_rf"] = p_test_retro_rf.tolist()
+
+    # --- 11. Retrospective Gradient Boosting ---
     model_retro_gb = GradientBoostingRegressor(n_estimators=100, max_depth=3, learning_rate=0.05, random_state=args.seed)
     model_retro_gb.fit(X_retro_train, y_train)
     p_val_retro_gb = np.maximum(0, model_retro_gb.predict(X_retro_val))
     p_test_retro_gb = np.maximum(0, model_retro_gb.predict(X_retro_test))
     results["Retrospective_Gradient_Boosting"] = {
-        "description": "Gradient Boosting on post-landing particle mass, area, wind.",
+        "description": "Gradient Boosting on post-landing particle mass, area, wind, moisture.",
         "prospective": False,
         "val": compute_metrics(y_val, p_val_retro_gb),
         "test": compute_metrics(y_test, p_test_retro_gb)
     }
     test_predictions_dict["pred_retrospective_gb"] = p_test_retro_gb.tolist()
 
-    # --- 7. Physical Mechanistic Baseline ---
+    # --- 12. Retrospective Multi-Layer Perceptron (Neural Network) ---
+    model_retro_mlp = MLPRegressor(hidden_layer_sizes=(16, 8), max_iter=2000, solver="lbfgs", random_state=args.seed)
+    model_retro_mlp.fit(X_retro_train, y_train)
+    p_val_retro_mlp = np.maximum(0, model_retro_mlp.predict(X_retro_val))
+    p_test_retro_mlp = np.maximum(0, model_retro_mlp.predict(X_retro_test))
+    results["Retrospective_MLP_Neural_Net"] = {
+        "description": "Two-layer neural network on post-landing particle mass, area, wind.",
+        "prospective": False,
+        "val": compute_metrics(y_val, p_val_retro_mlp),
+        "test": compute_metrics(y_test, p_test_retro_mlp)
+    }
+    test_predictions_dict["pred_retrospective_mlp"] = p_test_retro_mlp.tolist()
+
+    # --- 13. Retrospective Ensemble (Multi-model Average) ---
+    p_val_retro_ens = (p_val_retro_ridge + p_val_retro_rf + p_val_retro_gb + p_val_retro_mlp) / 4.0
+    p_test_retro_ens = (p_test_retro_ridge + p_test_retro_rf + p_test_retro_gb + p_test_retro_mlp) / 4.0
+    results["Retrospective_Ensemble"] = {
+        "description": "Ensemble blender averaging Retrospective Ridge, RF, GBDT, and MLP.",
+        "prospective": False,
+        "val": compute_metrics(y_val, p_val_retro_ens),
+        "test": compute_metrics(y_test, p_test_retro_ens)
+    }
+    test_predictions_dict["pred_retrospective_ensemble"] = p_test_retro_ens.tolist()
+
+    # --- 14. Physical Mechanistic Baseline ---
     p_val_phys = run_physics_baseline(val_recs, release_height=2.0)
     p_test_phys = run_physics_baseline(test_recs, release_height=2.0)
     results["Physical_RK4_Ballistic"] = {
@@ -309,4 +409,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
