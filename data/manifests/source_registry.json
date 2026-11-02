@@ -1,0 +1,76 @@
+{
+  "schema_version": "1.0",
+  "entries": [
+    {
+      "id": "usda_vegetative",
+      "task": "particle_distance",
+      "doi": "10.2737/RDS-2020-0035",
+      "article_id": 27009073,
+      "license_reported": "CC0-1.0",
+      "record_count_reported": 9249,
+      "raw_ingested": false,
+      "columns_verified": false,
+      "train_ready": false,
+      "notes": "Recovered mass and projected area are post-flight. Verify actual fields, units and independent burn/run identifiers."
+    },
+    {
+      "id": "usda_structural",
+      "task": "particle_distance",
+      "doi": "10.2737/RDS-2020-0034",
+      "article_id": 27009070,
+      "license_reported": "CC0-1.0",
+      "record_count_reported": 50571,
+      "raw_ingested": false,
+      "columns_verified": false,
+      "train_ready": false,
+      "notes": "Do not overlap repository mirrors or mix independent burns in different splits."
+    },
+    {
+      "id": "australia_spotting_2020",
+      "task": "wildfire_spotting",
+      "url": "https://www.mdpi.com/2571-6255/3/2/10/s1",
+      "license_reported": "CC-BY-4.0",
+      "source_fires_reported": 251,
+      "spot_fires_reported": 4219,
+      "raw_ingested": false,
+      "columns_verified": false,
+      "train_ready": false,
+      "notes": "Spot fires are successful ignitions, not individual ember landings; all spots from one source fire stay together."
+    },
+    {
+      "id": "zenodo_thermal_piles",
+      "task": "thermal_survival",
+      "doi": "10.5281/zenodo.1406207",
+      "raw_ingested": false,
+      "columns_verified": false,
+      "train_ready": false,
+      "notes": "Large thermal archive; not a particle trajectory dataset; inspect license and signals."
+    },
+    {
+      "id": "zenodo_acoustic",
+      "task": "firebrand_flux",
+      "doi": "10.5281/zenodo.4837617",
+      "raw_ingested": false,
+      "columns_verified": false,
+      "train_ready": false,
+      "notes": "Acoustic impacts and aggregate flux, not individual trajectory labels."
+    },
+    {
+      "id": "csiro_3d_2026",
+      "task": "particle_trajectory",
+      "doi": "10.1016/j.jaecs.2026.100520",
+      "access": "author_request",
+      "raw_ingested": false,
+      "train_ready": false,
+      "notes": "3D trajectories plus combustion; request permission and data dictionary."
+    },
+    {
+      "id": "korea_kfs_kma",
+      "task": "wildfire_context",
+      "url": "https://data.kma.go.kr",
+      "raw_ingested": false,
+      "train_ready": false,
+      "notes": "Contextual weather/incidents, not particle-resolved labels."
+    }
+  ]
+}

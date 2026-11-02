@@ -20,3 +20,14 @@ build/
 dist/
 *.egg-info/
 
+# Experimental data and derived artifacts
+data/raw/
+data/processed/
+distance_results/
+training_results/
+ember_results/
+
+# Research working data
+data/interim/
+data/quarantine/
+*.partial
