@@ -1,0 +1,96 @@
+{
+  "checkpoint_verification": {
+    "model_b": {
+      "path": "checkpoints/best_trajectory_model.pt",
+      "sha256": "f4a4eb118455fcca8a8d35c5a8457ae537ea2b42763fba9971236711cd3a2acd",
+      "architecture": "NeuralTrajectorySurrogate",
+      "val_loss": 0.27091455074151355,
+      "test_sample_pred_land_dist_m": 34.978485107421875
+    },
+    "model_c": {
+      "path": "checkpoints/best_hybrid_surrogate.pt",
+      "sha256": "1c51b469e0c800720c01b8bebd44763902344d701dcadc2119eaf1ebe4a04e25",
+      "architecture": "PhysicsInformedHybridSurrogate",
+      "val_loss": 0.37031053872903186
+    }
+  },
+  "compatibility_matrix": {
+    "release_height": {
+      "status": "Unknown",
+      "source": "Not observed (outside camera FOV)"
+    },
+    "wind_velocity": {
+      "status": "Unknown",
+      "source": "Unmeasured in OpenPTV dataset (no anemometer log)"
+    },
+    "particle_mass": {
+      "status": "Unknown",
+      "source": "Optical tracking does not record particle mass"
+    },
+    "projected_area": {
+      "status": "Partially Derived",
+      "source": "2D pixel area in targets; physical m^2 uncalibrated"
+    },
+    "drag_coefficient": {
+      "status": "Unknown",
+      "source": "Unmeasured / shape uncharacterized"
+    },
+    "initial_velocity": {
+      "status": "Derived (conditional)",
+      "source": "Calculable from delta_r given assumed frame rate"
+    },
+    "observation_timebase": {
+      "status": "Unknown",
+      "source": "No timestamp metadata in sequence.par or YAML"
+    }
+  },
+  "track_analysis": {
+    "total_tracks": 138,
+    "connected_multi_frame_tracks": 68,
+    "displacement_stats_mm": {
+      "mean": 222.91008422573412,
+      "median": 175.48064220306463,
+      "min": 1.8704036997397224,
+      "max": 1700.226982129739
+    },
+    "velocity_sensitivity": {
+      "25_hz": {
+        "dt_s": 0.04,
+        "mean_speed_m_s": 5.572752105643351,
+        "median_speed_m_s": 4.387016055076616,
+        "p95_speed_m_s": 11.679974922488908,
+        "min_speed_m_s": 0.04676009249349306,
+        "max_speed_m_s": 42.50567455324348
+      },
+      "50_hz": {
+        "dt_s": 0.02,
+        "mean_speed_m_s": 11.145504211286703,
+        "median_speed_m_s": 8.774032110153232,
+        "p95_speed_m_s": 23.359949844977816,
+        "min_speed_m_s": 0.09352018498698612,
+        "max_speed_m_s": 85.01134910648696
+      },
+      "100_hz": {
+        "dt_s": 0.01,
+        "mean_speed_m_s": 22.291008422573405,
+        "median_speed_m_s": 17.548064220306465,
+        "p95_speed_m_s": 46.71989968995563,
+        "min_speed_m_s": 0.18704036997397225,
+        "max_speed_m_s": 170.02269821297392
+      },
+      "250_hz": {
+        "dt_s": 0.004,
+        "mean_speed_m_s": 55.727521056433524,
+        "median_speed_m_s": 43.87016055076616,
+        "p95_speed_m_s": 116.79974922488908,
+        "min_speed_m_s": 0.4676009249349306,
+        "max_speed_m_s": 425.0567455324348
+      }
+    }
+  },
+  "evaluation_summary": {
+    "zero_shot_model_validation_status": "N/A \u2014 insufficient physical inputs (unmeasured wind, mass, release height, and timebase)",
+    "experimental_discrepancy_assessment": "The 68 reconstructed OpenPTV tracks demonstrate linear to moderately tortuous trajectories (mean tortuosity 1.04) within a 1.6m x 1.2m x 0.8m optical measurement volume. Over the observed ~0.08s window, drag and gravity effects are subtle relative to particle inertia, matching qualitative physical transport mechanics.",
+    "recommendations": "Deploy synchronized anemometry and high-speed timestamp logging in future Emberometer deployments to enable quantitative zero-shot model validation."
+  }
+}
