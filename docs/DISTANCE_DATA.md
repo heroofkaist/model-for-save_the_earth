@@ -54,3 +54,10 @@ If the data do not contain **documented per-test wind speeds or genuine experime
 3. Run group-held-out evaluation; compare against the median baseline and quantify pan-position error.
 4. Repeat on structural firebrand experiments as a **different domain**, not just random mixed rows.
 5. Request per-test wind time series, release/source geometry, individual particle observations and trajectory/flight-time benchmarks if unavailable.
+
+## Critical validity warning: post-flight covariates
+
+The USDA experiments report dry mass **after collection and oven drying**, not necessarily the initial mass of an airborne burning firebrand. A model using this mass is a **retrospective association**, not a deployable predictive model at the moment of release. Projected area is also measured after collection and may differ from in-flight geometry. Neither is guaranteed to be an observable input for an operational wildfire forecast. Likewise, travel distance measured from the burning fuel to a collection pan may involve varying release position and launch conditions.
+
+A genuinely prospective model must use inputs measurable **before or during** transport, such as the source fuel category, initial size/mass distribution measured at generation, released height, spatial wind field and plume conditions. Keep source-generating distribution models (which may use recovered morphology for characterization) separate from conditional transport predictors. Never describe retrospectively fitted post-flight features as forward-looking accuracy. The first distance-regression implementation is a *scientific exploratory baseline only* until this distinction is resolved.
+
