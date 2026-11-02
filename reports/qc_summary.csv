@@ -1,0 +1,4 @@
+category,count,pct,action
+PASS,69,100%,Eligible for group-validated distance training
+FLAG,0,0%,None
+EXCLUDE,0,0%,Quarantined in data/interim/quarantine.csv

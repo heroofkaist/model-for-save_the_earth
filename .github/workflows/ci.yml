@@ -2,6 +2,7 @@ name: Python validation
 on:
   push:
   pull_request:
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -10,6 +11,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - run: python -m pip install numpy matplotlib
+      - run: python -m pip install -r requirements.txt
       - run: python -m unittest discover -s tests -v
       - run: python ember_simulation.py --verify
