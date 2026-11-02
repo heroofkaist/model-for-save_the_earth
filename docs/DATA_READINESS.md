@@ -30,6 +30,7 @@ The official metadata registry is `data/manifests/source_registry.json`, contain
 ```bash
 python download_sources.py --dataset both --metadata-only
 python download_sources.py --dataset both
+python inspect_raw.py data/raw --output data/interim/raw_audit_v1.json
 # inspect actual source files, dictionaries and grouping BEFORE any mapping
 python research_data.py --input data/processed/canonical.csv --outdir data/interim --freeze-split data/manifests/split_v1.csv
 python -m unittest discover -s tests -v
