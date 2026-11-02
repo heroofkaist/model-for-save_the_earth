@@ -1,0 +1,4 @@
+partition,runs_count,pct_of_data,independent_groups_count,isolation_status
+train,51,73.9%,17,Fitted preprocessors and model weights
+validation,9,13.0%,3,Hyperparameter selection only
+test,9,13.0%,3,Frozen untouched evaluation

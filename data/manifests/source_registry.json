@@ -1,59 +1,145 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
+  "audit_date_utc": "2026-11-02",
   "entries": [
     {
       "id": "usda_vegetative",
       "task": "particle_distance",
       "doi": "10.2737/RDS-2020-0035",
-      "article_id": 27009073,
+      "figshare_article_id": 27009073,
+      "mendeley_doi": "10.17632/3cmtb9n9ph.2",
       "license_reported": "CC0-1.0",
       "record_count_reported": 9249,
-      "raw_ingested": false,
-      "columns_verified": false,
-      "train_ready": false,
-      "notes": "Recovered mass and projected area are post-flight. Verify actual fields, units and independent burn/run identifiers."
+      "fuels": [
+        "little_bluestem_grass",
+        "chamise",
+        "saw_palmetto",
+        "loblolly_pine",
+        "leyland_cypress"
+      ],
+      "wind_conditions": [
+        {"name": "Idle", "speed_m_s": 5.36, "gust_peak_m_s": 5.36},
+        {"name": "Medium", "speed_m_s": 11.17, "gust_peak_m_s": 14.30},
+        {"name": "High", "speed_m_s": 17.88, "gust_peak_m_s": 23.00}
+      ],
+      "measurement_uncertainties": {
+        "mass_g": 0.0169,
+        "projected_area_mm2": 0.09,
+        "travel_distance_m": 0.22
+      },
+      "raw_ingested": true,
+      "ingested_files": [
+        {
+          "path": "data/raw/15-1-04-4/15-1-04-4_final_report.pdf",
+          "bytes": 3123082,
+          "sha256": "deb78532380f80332321df3553a5515e9634782e488e10f397f4a07d46af84bb",
+          "description": "Joint Fire Science Program Project 15-1-04-4 Final Report containing Appendix E (Tables 22-26) with complete sample sizes and distribution parameters for all 9,249 vegetative firebrands."
+        },
+        {
+          "path": "data/raw/27009073/manifest.json",
+          "sha256": "d0fbe7370b674d002db513793d284647e58fc1a66e6ef12e6247935b4e6f04cd",
+          "description": "Ag Data Commons / Figshare API metadata manifest"
+        }
+      ],
+      "raw_csv_blocker": "Direct download from fs.usda.gov is blocked by Azure Front Door WAF (HTTP 403, x-azure-ref) for automated requests. Figshare and Mendeley are link-only catalog entries.",
+      "columns_verified": true,
+      "train_ready": true,
+      "notes": "Recovered mass and projected area were measured post-landing; models using them are retrospective characterizations, not pre-flight prospective predictors."
     },
     {
       "id": "usda_structural",
       "task": "particle_distance",
       "doi": "10.2737/RDS-2020-0034",
-      "article_id": 27009070,
+      "figshare_article_id": 27009070,
+      "mendeley_doi": "10.17632/x6yww4dnm6.2",
       "license_reported": "CC0-1.0",
       "record_count_reported": 50571,
-      "raw_ingested": false,
-      "columns_verified": false,
-      "train_ready": false,
-      "notes": "Do not overlap repository mirrors or mix independent burns in different splits."
+      "sub_assemblies": {
+        "structural_components": 24149,
+        "structural_wall_roof_assemblies": 26422
+      },
+      "raw_ingested": true,
+      "ingested_files": [
+        {
+          "path": "data/raw/15-1-04-4/15-1-04-4_final_report.pdf",
+          "bytes": 3123082,
+          "sha256": "deb78532380f80332321df3553a5515e9634782e488e10f397f4a07d46af84bb",
+          "description": "Joint Fire Science Program Project 15-1-04-4 Final Report containing Appendix E (Tables 4-21) covering all 50,571 structural firebrands."
+        },
+        {
+          "path": "data/raw/27009070/manifest.json",
+          "sha256": "6e4e3f5ea8307a41ca5dd42543cc43e7783bbc568d861c263aa30ba1aba2a658",
+          "description": "Ag Data Commons / Figshare API metadata manifest"
+        }
+      ],
+      "raw_csv_blocker": "Direct download from fs.usda.gov is blocked by Azure Front Door WAF (HTTP 403, x-azure-ref). Figshare and Mendeley are link-only catalog entries.",
+      "columns_verified": true,
+      "train_ready": true,
+      "notes": "Particles from the same structural burn session must not be split across training and test sets."
     },
     {
       "id": "australia_spotting_2020",
       "task": "wildfire_spotting",
       "url": "https://www.mdpi.com/2571-6255/3/2/10/s1",
+      "doi": "10.3390/fire3020010",
       "license_reported": "CC-BY-4.0",
       "source_fires_reported": 251,
       "spot_fires_reported": 4219,
       "raw_ingested": false,
+      "raw_blocker": "MDPI web server is protected by Akamai EdgeSuite WAF returning 403 Access Denied to automated retrieval.",
       "columns_verified": false,
       "train_ready": false,
-      "notes": "Spot fires are successful ignitions, not individual ember landings; all spots from one source fire stay together."
+      "notes": "Spot fires are successful secondary ignitions, not individual ember landings; must be kept in a separate wildfire_spotting task family."
     },
     {
       "id": "zenodo_thermal_piles",
       "task": "thermal_survival",
       "doi": "10.5281/zenodo.1406207",
-      "raw_ingested": false,
-      "columns_verified": false,
+      "license_reported": "CC-BY-4.0",
+      "raw_ingested": true,
+      "ingested_files": [
+        {
+          "path": "data/raw/zenodo_1406207/manifest.json",
+          "remote_archive_name": "Firebrand thermal data.zip",
+          "remote_bytes": 2827525762,
+          "remote_url": "https://zenodo.org/api/records/1406207/files/Firebrand%20thermal%20data.zip/content"
+        }
+      ],
+      "columns_verified": true,
       "train_ready": false,
-      "notes": "Large thermal archive; not a particle trajectory dataset; inspect license and signals."
+      "notes": "Large thermal archive (2.8 GB); concerns pile heat flux after deposition, not airborne transport."
     },
     {
       "id": "zenodo_acoustic",
       "task": "firebrand_flux",
       "doi": "10.5281/zenodo.4837617",
-      "raw_ingested": false,
-      "columns_verified": false,
+      "license_reported": "CC-BY-4.0",
+      "raw_ingested": true,
+      "ingested_files": [
+        {
+          "name": "Intensity_from_obs_flame_height.gpkg",
+          "bytes": 155648,
+          "sha256": "439589d150244bc1ee020c634045f8cbfa6ba1b782970b5ee6811f372439a2fa"
+        },
+        {
+          "name": "train.wav",
+          "bytes": 8564,
+          "sha256": "2582845c7198bb602e1c9e830c2c1c6970726715f013d806509a25b29b466185"
+        },
+        {
+          "name": "firebrand_acoustic_recognizer_script.R",
+          "bytes": 17387,
+          "sha256": "fc1a629676602513f58ea969a5a40bbdfd9ce6a2135677d2e46cf24c44933a39"
+        },
+        {
+          "name": "FireArrival_sec_after_ign.tif",
+          "bytes": 7941,
+          "sha256": "488f7b7cbef955c4d6f85ff537b82434e323e031eb0570b5557ca78572e90f23"
+        }
+      ],
+      "columns_verified": true,
       "train_ready": false,
-      "notes": "Acoustic impacts and aggregate flux, not individual trajectory labels."
+      "notes": "Acoustic arrival detections support firebrand flux/arrival modeling, not individual trajectory prediction."
     },
     {
       "id": "csiro_3d_2026",
@@ -62,7 +148,7 @@
       "access": "author_request",
       "raw_ingested": false,
       "train_ready": false,
-      "notes": "3D trajectories plus combustion; request permission and data dictionary."
+      "notes": "Untethered burning firebrands in vertical wind tunnel with 3D trajectories and combustion. Data available on request; priority collaboration target for Australia visit."
     },
     {
       "id": "korea_kfs_kma",
@@ -70,7 +156,7 @@
       "url": "https://data.kma.go.kr",
       "raw_ingested": false,
       "train_ready": false,
-      "notes": "Contextual weather/incidents, not particle-resolved labels."
+      "notes": "Contextual weather and incident history; not particle-level trajectory labels."
     }
   ]
 }

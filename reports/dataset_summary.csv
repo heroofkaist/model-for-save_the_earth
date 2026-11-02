@@ -1,0 +1,4 @@
+source_id,task_family,total_runs,independent_groups,wind_levels,total_firebrands_reported,provenance_source
+usda_vegetative_2020_0035,particle_distance,15,5,"Idle (5.36m/s), Med (11.17m/s), High (17.88m/s)",9249,JFSP 15-1-04-4 Report Tables 22-26
+usda_structural_2020_0034,particle_distance,54,18,"Idle (5.36m/s), Med (11.17m/s), High (17.88m/s)",50571,JFSP 15-1-04-4 Report Tables 4-21
+zenodo_4837617,firebrand_flux,1,1,Field ambient 4.2m/s,142,Zenodo 4837617 Audio Classifier
