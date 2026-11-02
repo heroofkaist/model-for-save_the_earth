@@ -38,3 +38,4 @@ Stored immutably in `data/manifests/split_v1.csv` (SHA-256: `4339bb6f...`):
 * **Validation Partition:** 9 runs (3 independent fuel groups, ~13%).
 * **Test Partition:** 9 runs (3 independent fuel groups, ~13%).
 * **Overlap:** Exactly zero group leakage between partitions.
+

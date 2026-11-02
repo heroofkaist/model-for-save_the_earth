@@ -41,3 +41,4 @@ This suite of models evaluates firebrand travel distance predictions on unseen e
 1. **Prospective Generalization:** Using solely wind speed and fuel category, the Random Forest model achieves $\text{MAE} = 1.700\,\text{m}$ across unseen experimental fuels, outperforming the median baseline ($\text{MAE} = 1.785\,\text{m}$).
 2. **Value of Morphology:** Retrospective modeling with post-landing mass and area lowers RMSE to $2.059\,\text{m}$ and reduces bias to $-0.402\,\text{m}$. This proves that in-flight firebrand morphology strongly governs transport, highlighting the necessity of pre-flight particle imaging systems in future field campaigns.
 3. **Ballistic Drag Limitations:** The pure ballistic physical baseline without wind tunnel wake recirculation overpredicts travel distance ($+7.92\,\text{m}$ bias), showing that near-ground recirculation eddies and water-pan wake effects must be coupled with boundary-layer physics.
+

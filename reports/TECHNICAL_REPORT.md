@@ -183,3 +183,4 @@ python3 generate_diagnostics.py
 4. Storey, M. A., Price, O. F., Bradstock, R. A., & Sharples, J. J. (2020). *Analysis of Variation in Distance, Number, and Distribution of Spotting in Southeast Australian Wildfires*. Fire, 3(2), 10. DOI: 10.3390/fire3020010.
 5. Zenodo Dataset 4837617. *Quantifying firebrand production and transport using acoustic analysis of in-fire cameras*. DOI: 10.5281/zenodo.4837617.
 6. Zenodo Dataset 1406207. *Thermal characterization of firebrand piles*. DOI: 10.5281/zenodo.1406207.
+

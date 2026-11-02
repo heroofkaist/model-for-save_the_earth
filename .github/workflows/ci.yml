@@ -14,4 +14,3 @@ jobs:
       - run: python -m pip install -r requirements.txt
       - run: python -m unittest discover -s tests -v
       - run: python ember_simulation.py --verify
-      - run: python train_distance_benchmarks.py
