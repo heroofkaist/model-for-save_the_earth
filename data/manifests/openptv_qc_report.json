@@ -1,0 +1,43 @@
+{
+  "upstream_repo": "https://github.com/OpenPTV/2_cam_firebrands.git",
+  "upstream_commit": "2f45dcf45798add1ba26fb39927292cf50da7791",
+  "total_frames": 6,
+  "frame_ids": [
+    303,
+    304,
+    305,
+    306,
+    307,
+    308
+  ],
+  "total_reconstructed_detections": 247,
+  "total_unique_tracks": 138,
+  "multi_frame_tracks_ge2": 68,
+  "single_frame_detections": 70,
+  "track_length_distribution": {
+    "1": 70,
+    "2": 39,
+    "3": 21,
+    "4": 4,
+    "5": 4
+  },
+  "broken_or_mismatched_links": 0,
+  "audit_anomalies": [],
+  "spatial_bounds_m": {
+    "x_min": -1.340772,
+    "x_max": 0.28768,
+    "y_min": -0.452367,
+    "y_max": 0.745776,
+    "z_min": -1.156798,
+    "z_max": 2.101483
+  },
+  "spatial_bounds_mm": {
+    "x_min": -1340.7720000000002,
+    "x_max": 287.68,
+    "y_min": -452.367,
+    "y_max": 745.776,
+    "z_min": -1156.798,
+    "z_max": 2101.483
+  },
+  "timestamp_status": "unresolved_missing_in_raw_dataset"
+}
