@@ -17,6 +17,8 @@ TASK_TARGETS = {
     "particle_trajectory": "flight_time_s",
     "thermal_survival": "heat_flux_w_m2",
     "wildfire_spotting": "spot_fire_distance_m",
+    "firebrand_flux": "impact_count",
+    "ignition": "ignited",
 }
 BASE = ("record_id", "source_id", "source_file", "source_file_sha256",
         "source_row_id", "observation_type", "task_family", "experiment_id",
@@ -24,17 +26,19 @@ BASE = ("record_id", "source_id", "source_file", "source_file_sha256",
 ALLOWED_LICENSES = {"CC0-1.0", "CC-BY-4.0"}
 POSITIVE = ("mass_kg", "projected_area_m2", "release_height_m", "flight_time_s")
 NONNEGATIVE = ("landing_distance_m", "wind_speed_m_s", "heat_flux_w_m2",
-               "spot_fire_distance_m")
+               "spot_fire_distance_m", "impact_count")
 OBSERVATIONS = {
     "particle_distance": {"wind_tunnel_particle", "field_particle"},
     "particle_trajectory": {"wind_tunnel_particle", "field_particle"},
     "thermal_survival": {"thermal"},
     "wildfire_spotting": {"spot_fire"},
+    "firebrand_flux": {"acoustic_impact"},
+    "ignition": {"ignition_trial"},
 }
 OUTPUT_COLUMNS = ("record_id", "source_id", "task_family", "experiment_id",
                   "fire_id", "qc_status", "qc_reason", "measurement_stage",
                   "landing_distance_m", "flight_time_s", "heat_flux_w_m2",
-                  "spot_fire_distance_m", "mass_kg", "projected_area_m2",
+                  "spot_fire_distance_m", "impact_count", "ignited", "mass_kg", "projected_area_m2",
                   "wind_speed_m_s", "fuel_type", "source_file_sha256")
 
 
@@ -107,6 +111,8 @@ def review(row):
             reasons.append("distance_definition_unverified")
         if row.get("measurement_stage", "") not in ("post_landing", "pre_release", "unknown"):
             reasons.append("measurement_stage_unverified")
+    if task == "ignition" and row.get("ignited") not in ("0", "1"):
+        reasons.append("invalid_binary_ignition")
     # Missing trajectory points or thermal time-series are not silently invented.
     if task == "particle_trajectory" and row.get("trajectory_file_sha256", "") == "":
         reasons.append("missing_trajectory_points")
