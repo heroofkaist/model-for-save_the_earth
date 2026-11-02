@@ -37,3 +37,4 @@ class FirebrandDepositionInterface(ResearchModule):
     def validate_schema(self, data: Dict[str, Any]) -> bool:
         required = {"record_id", "experiment_id", "wind_speed_m_s", "landing_distance_m"}
         return required.issubset(data.keys())
+

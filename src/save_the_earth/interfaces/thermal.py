@@ -33,3 +33,4 @@ class ThermalSurvivalInterface(ResearchModule):
     def validate_schema(self, data: Dict[str, Any]) -> bool:
         required = {"record_id", "surface_temperature_c", "heat_flux_kw_m2"}
         return required.issubset(data.keys())
+

@@ -80,3 +80,4 @@ All models evaluated on the frozen, untouched held-out test partition (`data/man
 2. **Aggregated Run Medians vs. Raw Particle Microdata:** The USDA Forest Service RDS repository blocks automated non-US requests via Azure Front Door WAF (HTTP 403 Forbidden). Individual firebrand microdata ($N=60,370$) could not be downloaded directly, necessitating aggregate-run modeling.
 3. **Plume Buoyancy Absence in Lab Tunnels:** Wind tunnel tests study forced convection without the convective thermal updrafts present in high-intensity wildfires.
 4. **Ignition Disconnection:** Ember travel distance cannot be treated as a surrogate for wildfire ignition probability, which is strictly governed by fuel bed moisture content and heat flux.
+

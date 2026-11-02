@@ -1,0 +1,56 @@
+# Simulation Configuration for 10,000 Independent Firebrand Trajectories
+seed: 42
+num_trajectories: 10000
+num_ood_trajectories: 500
+
+# Physical Parameter Ranges (SI Units, literature-supported)
+parameters:
+  # Wind reference speed at 10m height (m/s)
+  wind_ref_min: 2.0
+  wind_ref_max: 22.0
+  
+  # Release height above ground (m): covers shrub fires to tall crown canopies
+  release_height_min: 0.5
+  release_height_max: 25.0
+  
+  # Particle mass (kg): log-uniform from 0.02 g to 5.0 g
+  mass_kg_min: 2.0e-5
+  mass_kg_max: 5.0e-3
+  
+  # Particle projected area (m^2): log-uniform from 0.2 cm^2 to 30 cm^2
+  area_m2_min: 2.0e-5
+  area_m2_max: 3.0e-3
+  
+  # Drag coefficient Cd: irregular firebrand flakes, bark cylinders, spheres
+  cd_min: 0.5
+  cd_max: 1.4
+  
+  # Boundary layer roughness length z0 (m)
+  z0_min: 0.002
+  z0_max: 0.05
+  
+  # Buoyant thermal updraft speed w0 at release (m/s)
+  updraft_w0_min: 0.0
+  updraft_w0_max: 3.5
+
+# Numerical Integration
+numerical:
+  dt_sim: 0.005       # Internal RK4 simulation time step (s)
+  max_flight_time: 45.0 # Max allowed flight time before cutoff (s)
+  trajectory_points: 50 # Number of resampled evaluation points per trajectory
+
+# Dataset Splitting
+splits:
+  train_ratio: 0.70    # 7,000 trajectories
+  val_ratio: 0.15      # 1,500 trajectories
+  test_ratio: 0.15     # 1,500 trajectories
+  split_by: "scenario_family" # Prevents scenario leakage
+
+# Out-of-Distribution (OOD) Scenarios (extreme parameters)
+ood_parameters:
+  wind_ref_min: 24.0   # Extreme gale winds (24 - 32 m/s)
+  wind_ref_max: 32.0
+  release_height_min: 30.0 # High fire plume lofting (30 - 50 m)
+  release_height_max: 50.0
+  mass_kg_min: 6.0e-3   # Heavy chunks (6 - 15 g)
+  mass_kg_max: 1.5e-2

@@ -35,3 +35,4 @@ class WildfireSpottingInterface(ResearchModule):
     def validate_schema(self, data: Dict[str, Any]) -> bool:
         required = {"fire_id", "spot_fire_distance_m", "ambient_wind_speed_10m_m_s"}
         return required.issubset(data.keys())
+

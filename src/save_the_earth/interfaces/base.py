@@ -40,3 +40,4 @@ class ResearchModule(ABC):
     def validate_schema(self, data: Dict[str, Any]) -> bool:
         """Validates that input record conforms to domain specifications."""
         pass
+

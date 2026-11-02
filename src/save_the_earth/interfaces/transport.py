@@ -33,3 +33,4 @@ class AtmosphericTransportInterface(ResearchModule):
     def validate_schema(self, data: Dict[str, Any]) -> bool:
         required = {"record_id", "trajectory_points", "wind_velocity_3d"}
         return required.issubset(data.keys())
+

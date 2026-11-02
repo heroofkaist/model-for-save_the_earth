@@ -34,3 +34,4 @@ class FirebrandGenerationInterface(ResearchModule):
     def validate_schema(self, data: Dict[str, Any]) -> bool:
         required = {"experiment_id", "fuel_species", "generation_rate_particles_s"}
         return required.issubset(data.keys())
+
