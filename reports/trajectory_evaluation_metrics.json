@@ -1,0 +1,67 @@
+{
+  "dataset_summary": {
+    "total_trajectories": 10000,
+    "train_trajectories": 7000,
+    "val_trajectories": 1500,
+    "test_trajectories": 1500,
+    "ood_trajectories": 500
+  },
+  "test_metrics": {
+    "analytical_ballistic": {
+      "traj_3d_mae_m": 5.970500469207764,
+      "traj_3d_rmse_m": 7.223723411560059,
+      "max_trajectory_deviation_m": 24.605945587158203,
+      "landing_distance_mae_m": 37.856666564941406,
+      "landing_distance_rmse_m": 59.7952880859375,
+      "landing_x_mae_m": 37.69883346557617,
+      "landing_y_mae_m": 3.2739107608795166,
+      "flight_time_mae_s": 3.792879581451416,
+      "flight_time_rmse_s": 4.576289176940918
+    },
+    "model_b_neural_surrogate": {
+      "traj_3d_mae_m": 4.735727310180664,
+      "traj_3d_rmse_m": 8.63176441192627,
+      "max_trajectory_deviation_m": 104.8619613647461,
+      "landing_distance_mae_m": 8.12060546875,
+      "landing_distance_rmse_m": 13.286276817321777,
+      "landing_x_mae_m": 8.087106704711914,
+      "landing_y_mae_m": 0.8412323594093323,
+      "flight_time_mae_s": 0.7616000771522522,
+      "flight_time_rmse_s": 1.1128976345062256
+    },
+    "model_c_physics_hybrid": {
+      "traj_3d_mae_m": 1.749944806098938,
+      "traj_3d_rmse_m": 2.42278790473938,
+      "max_trajectory_deviation_m": 14.3569974899292,
+      "landing_distance_mae_m": 11.878450393676758,
+      "landing_distance_rmse_m": 21.366628646850586,
+      "landing_x_mae_m": 11.833197593688965,
+      "landing_y_mae_m": 1.0695756673812866,
+      "flight_time_mae_s": 0.8840441107749939,
+      "flight_time_rmse_s": 1.2638449668884277
+    }
+  },
+  "ood_metrics": {
+    "model_b_neural_surrogate": {
+      "traj_3d_mae_m": 113.11949920654297,
+      "traj_3d_rmse_m": 142.6541290283203,
+      "max_trajectory_deviation_m": 588.6436767578125,
+      "landing_distance_mae_m": 219.44564819335938,
+      "landing_distance_rmse_m": 242.40762329101562,
+      "landing_x_mae_m": 219.4689178466797,
+      "landing_y_mae_m": 2.2428369522094727,
+      "flight_time_mae_s": 4.004178047180176,
+      "flight_time_rmse_s": 4.62068510055542
+    }
+  },
+  "throughput_benchmark": {
+    "rk4_throughput_traj_per_sec": 84.19964828843156,
+    "neural_throughput_traj_per_sec": 2768804.799018305,
+    "speedup_ratio": 32883.804805616026
+  },
+  "real_usda_evaluation": {
+    "num_experimental_runs": 69,
+    "mae_m": 4.265260401656663,
+    "rmse_m": 5.800458650400212
+  }
+}

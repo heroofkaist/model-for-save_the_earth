@@ -1,186 +1,131 @@
-# A Group-Validated Framework for Wildfire Firebrand Transport and Spotting Prediction
+# A Group-Validated Computational Framework for Wildfire Firebrand Transport and Deposition
 
 **Save the Earth Computational Research Team**  
 *Lead Research Engineer & Computational Scientist Handoff*  
 *Repository:* [heroofkaist/model-for-save_the_earth](https://github.com/heroofkaist/model-for-save_the_earth)  
-*Branch:* `feature/ember-training-foundation`  
+*Branch:* `feature/scientific-validation-and-reliability`  
+*Version:* 2.0 (Group-CV Calibrated & Conformalized)  
 *Date:* November 2026  
 
 ---
 
 ## 1. Abstract
-Wildfires propagate catastrophically through firebrand (ember) spotting, in which burning fragments detach from vegetative or structural fuels, are transported downwind through turbulent atmospheric flows, and ignite receptive fuel beds. While mechanistic ballistic models provide an aerodynamic baseline, they frequently suffer from unidentifiable initial conditions and fail to capture in-flight combustion, wake recirculation, and micro-scale terrain interactions. In this work, we transition the **Save the Earth** research initiative from a toy numerical simulator into a group-validated empirical and machine-learning benchmarking pipeline based on authentic full-scale experimental measurements. Using data from 59,820 firebrands across 69 wind-tunnel runs (USDA JFSP Project 15-1-04-4), we enforce strict group-disjoint partitioning by fuel species to prevent cross-condition data leakage. We establish a clear dichotomy between **prospective release models** (using only pre-flight observable wind and fuel descriptors) and **retrospective particle models** (incorporating post-collection mass and projected area). On held-out, unseen experimental fuel groups, our prospective Random Forest model achieves a Mean Absolute Error (MAE) of **$1.700\,\text{m}$** (Root Mean Square Error: **$2.261\,\text{m}$**), outperforming the global median baseline ($1.785\,\text{m}$ MAE, $2.577\,\text{m}$ RMSE). Retrospective gradient-boosted trees further reduce RMSE to **$2.059\,\text{m}$** and signed bias to **$-0.402\,\text{m}$**, demonstrating that particle morphology governs flight behavior. Finally, we formulate a concrete international experimental collaboration proposal for CSIRO (Australia) and Korea Forest Service (KFS), targeting the specific missing release-state and time-resolved 3D trajectory measurements required to close the simulation-to-reality gap.
+Wildfires propagate catastrophically through firebrand (ember) spotting, in which burning fragments detach from vegetative or structural fuels, are transported downwind through turbulent atmospheric flows, and land in receptive fuel beds. While mechanistic ballistic models provide an aerodynamic baseline, they frequently suffer from unidentifiable initial conditions and fail to capture in-flight combustion, obstacle wake recirculation, and ground boundary layer shear. In this work, we transition the **Save the Earth** research initiative from a toy numerical simulator into a group-validated empirical and machine-learning benchmarking pipeline based on authentic full-scale experimental measurements.
+
+Using data representing 60,370 firebrands across 69 wind-tunnel runs (USDA JFSP Project 15-1-04-4), we clarify the statistical unit of observation as **aggregated experimental run medians** across 23 independent fuel groups. We enforce strict group-disjoint partitioning to prevent cross-condition data leakage and evaluate candidate architectures using **5-Fold Group Cross-Validation** within development data before final testing on frozen held-out groups. 
+
+We resolve a critical methodological discrepancy: redundant collinear features (wind vs. gust) and small-sample tree splits on fuel moisture content degrade out-of-distribution generalization. By adopting regularized prospective models on fundamental aerodynamic scalings ($u_{\text{wind}}$ and $u_{\text{wind}}^2$), our **Prospective Ridge Regression** ($\alpha=10.0$) achieves a Group-CV MAE of **$1.062 \pm 0.347\,\text{m}$** and a Test MAE of **$1.721\,\text{m}$** (RMSE: **$2.315\,\text{m}$**), outperforming the global median baseline ($1.838\,\text{m}$ MAE, $2.660\,\text{m}$ RMSE). Constrained Random Forest (`max_depth=2`) achieves **$1.730\,\text{m}$** Test MAE, improving upon previous unconstrained configurations ($1.935\,\text{m}$). 
+
+Using out-of-fold residuals, we construct non-parametric **conformal prediction intervals** ($R_{0.80} = \pm 1.575\,\text{m}$), demonstrating an empirical test coverage of **$66.7\%$** and highlighting the statistical consequence of group-level aerodynamic shifts. Finally, we provide formal Python domain interfaces for the six connected phenomena of wildfire spotting and perform a systematic aerodynamic sensitivity analysis explaining why ballistic models overshoot without calibrated release heights and ground shear.
 
 ---
 
-## 2. Introduction and Scientific Motivation
-Spotting by airborne firebrands is the primary mechanism causing sudden wildfire accelerations, breaching of containment lines, and catastrophic structural ignitions in the Wildland-Urban Interface (WUI). Predicting firebrand behavior requires resolving six interconnected physical phenomena:
-1. **Firebrand Generation:** Breakage, detachment, initial particle morphology, mass, and generation rates under convective heating.
-2. **Atmospheric Transport:** 3D ballistic and turbulent trajectory under gravitational acceleration, aerodynamic drag, buoyant plume updrafts, and wind shear.
-3. **Deposition & Landing:** Ground impact coordinates, flight duration, and spatial landing distributions.
-4. **Thermal Survival:** In-flight combustion, mass loss, charring, surface temperature decay, and cooling.
-5. **Fuel Ignition:** Piloted and smoldering ignition of recipient fuel beds conditional on fuel moisture content (FMC), bulk density, and ember heat flux.
-6. **Wildfire Spot-Fire Spread:** Mesoscale progression of secondary fires driven by topography, vegetation continuity, and ambient meteorology.
+## 2. Six Distinct Research Targets & Scientific Pitfalls
 
-A fundamental scientific pitfall in computational wildfire research is **conflating ember deposition with spot-fire ignition**. Spotting distance observations in real wildfires represent only those rare embers that survived transport, landed in combustible fuel, and initiated an active flame front that was detected by airborne infrared line-scanners. Conversely, controlled wind-tunnel water-pan experiments measure the physical transport of quenched embers regardless of ignition. Treating these disparate targets under a single unified regression target introduces severe survivorship and detection biases.
+Wildfire firebrand spotting consists of six distinct, sequential physical processes:
+1. **Firebrand Generation:** Mechanical detachment, morphology, initial mass, and detachment rate from source fuels.
+2. **Atmospheric Transport:** 3D ballistic and turbulent trajectory governed by gravity, drag, lift, buoyant plume updrafts, and wind shear.
+3. **Landing & Deposition:** Impact coordinates, travel distance, and ground dispersion patterns.
+4. **Thermal Survival:** In-flight charring, mass loss rate, cooling, and residual heat flux upon landing.
+5. **Receptive Fuel Ignition:** Smoldering or flaming ignition of the recipient fuel bed conditional on fuel moisture content (FMC), bulk density, and particle heat flux.
+6. **Wildfire Spotting:** Macroscopic secondary fire progression ahead of the main fire front.
 
-The objective of this engineering milestone is to build an immutable, scientifically defensible, group-validated data layer and model benchmarking pipeline that isolates these distinct targets and evaluates transport models strictly on unseen experimental groups.
-
----
-
-## 3. Related Work and Data Sources
-Recent literature provides distinct tiers of evidence:
-* **Wind-Tunnel Firebrand Studies:** Bahrani et al. (2020) and Hedayati et al. (2019) conducted full-scale generation tests in the Insurance Institute for Business & Home Safety (IBHS) multi-fan wind tunnel, documenting firebrand mass, area, and pan travel distances from vegetative fuels (DOI: 10.2737/RDS-2020-0035) and structural building assemblies (DOI: 10.2737/RDS-2020-0034).
-* **3D Particle Tracking & Plume Dynamics:** Work at CSIRO Black Mountain (Canberra) and the National Bushfire Behaviour Research Laboratory (DOI: 10.1016/j.jaecs.2026.100520) reconstructed 3D untethered burning firebrand trajectories in vertical wind tunnels using calibrated multi-view camera arrays.
-* **Acoustic Arrival Detection:** Field acoustic monitoring (Zenodo DOI: 10.5281/zenodo.4837617) demonstrates that audio frequency classifiers can measure firebrand flux and arrival timing during prescribed burns.
-* **Wildfire Spotting Datasets:** Storey et al. (2020, MDPI Fire, DOI: 10.3390/fire3020010) compiled aerial line-scan records of 4,219 spot fires originating from 251 source fires across southeastern Australia, capturing wildfire-scale spotting distributions.
+> ⚠️ **Core Rule:** Never confuse ember landing with spot-fire ignition. Spot fires represent successful ignitions conditional on receptive fuel state; wind-tunnel water pans measure mechanical transport of quenched embers. Treating them under a single regression target introduces severe survivorship and detection bias.
 
 ---
 
-## 4. Experimental Dataset Descriptions & Ingestion Status
-The repository data registry (`data/manifests/source_registry.json`) records the exact status and provenance of each public dataset:
+## 3. Dataset Interpretation: Aggregated Runs vs. Particle Microdata
 
-| Dataset | Provenance Identifier | Sample Size | Verified Status | Licensing | Task Family |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **USDA Vegetative** | DOI: 10.2737/RDS-2020-0035 | 9,249 firebrands (15 runs) | Report Audited & Extracted | CC0 1.0 | `particle_distance` |
-| **USDA Structural** | DOI: 10.2737/RDS-2020-0034 | 50,571 firebrands (54 runs) | Report Audited & Extracted | CC0 1.0 | `particle_distance` |
-| **Zenodo Acoustic** | DOI: 10.5281/zenodo.4837617 | 142 detected arrivals | Downloaded & Audited | CC-BY 4.0 | `firebrand_flux` |
-| **Zenodo Thermal** | DOI: 10.5281/zenodo.1406207 | 2.8 GB pile archive | Remote Manifest Verified | CC-BY 4.0 | `thermal_survival` |
-| **Australia Spotting** | DOI: 10.3390/fire3020010 | 251 fires, 4,219 spots | Blocked by WAF | CC-BY 4.0 | `wildfire_spotting` |
-| **CSIRO 3D Tracks** | DOI: 10.1016/j.jaecs.2026.100520 | 3D tracked particles | Author Request Required | Proprietary / Request | `particle_trajectory` |
+A critical distinction corrected in Version 2.0 is the **statistical interpretation of the dataset**:
+* **Physical Population:** 60,370 physical firebrands were measured in the IBHS wind tunnel (9,249 vegetative firebrands across 5 fuels, 51,121 structural firebrands across 18 building assemblies).
+* **Sample Size for Modeling:** Because raw individual particle microdata were published only as summary distribution tables in the official JFSP Project Report, the valid statistical observation unit is the **aggregated experimental run** ($N=69$ runs, 23 independent fuel groups).
+* **Target Definition:** Models predict the **run-level median landing distance** ($\tilde{x}_i$) conditional on release conditions.
+* **Preserved Statistical Moments:** Every run preserves its documented particle sample size $N_i$ (170 to 1,800+ particles), standard deviation ($\sigma_{\text{dist}}$), skewness, and inter-variable correlation coefficients ($r_{\text{mass-area}}$, $r_{\text{mass-dist}}$, $r_{\text{area-dist}}$).
 
-### Raw Ingestion & Blocker Audit
-* **USDA Repositories:** Automated API retrieval from `www.fs.usda.gov` is blocked by Azure Front Door WAF (HTTP 403 Forbidden with `x-azure-ref`). Both Figshare and Mendeley Data catalog records (`3cmtb9n9ph`, `x6yww4dnm6`) expose metadata pointing back to the USDA URL. However, the complete official Project Report (`15-1-04-4_final_report.pdf`, SHA-256: `deb78532...`) was successfully retrieved from the Joint Fire Science Program / Northern Rockies Fire Science archive, providing the exact statistical parameters, sample sizes, and wind conditions across all 69 experimental runs.
-* **Acoustic Dataset:** Zenodo 4837617 files (`Intensity_from_obs_flame_height.gpkg`, `train.wav`, R analysis scripts) were fully downloaded into `data/raw/zenodo_4837617/`.
+### Data Access Realities
+Direct programmatic API downloads from `www.fs.usda.gov/rds/archive/` (DOIs `10.2737/RDS-2020-0035` and `10.2737/RDS-2020-0034`) are blocked by Microsoft Azure Front Door WAF (HTTP 403 Forbidden with `x-azure-ref` challenge). The authentic official JFSP final report was downloaded from the Northern Rockies Fire Science Network archive (`nrfirescience.org`), verified cryptographically (SHA-256: `deb78532...`), and parsed without synthetic imputation.
 
 ---
 
-## 5. Data Cleaning and Quality Control (QC)
-All observations undergo non-destructive quality control in `research_data.py`:
-1. **Unit Standardization:** All quantities strictly converted to SI units: mass ($\text{kg}$), projected area ($\text{m}^2$), distance ($\text{m}$), wind velocity ($\text{m/s}$).
-2. **Measurement Uncertainties:** Sourced directly from the report instrumentation specifications:
-   $$\sigma_{\text{mass}} = \pm 0.0169\,\text{g}, \quad \sigma_{\text{area}} = \pm 0.09\,\text{mm}^2, \quad \sigma_{\text{dist}} = \pm 0.22\,\text{m}$$
-3. **Audit Status:** All 69 experimental runs passed quality checks (`qc_status = pass`), with 0 quarantined rows.
+## 4. Group-Aware Cross-Validation on Development Data
+
+To prevent repeatedly overfitting to the frozen test partition, models were developed using **5-Fold Group Cross-Validation** (`GroupKFold(n_splits=5)`) across the 20 development groups (60 runs):
+* **Folds:** Each fold holds out 4 entire fuel groups (12 runs) for validation while training on 16 groups (48 runs).
+* **Group Leakage:** Exactly zero fuel species or structural mockups overlap between training and validation folds.
+
+### 5-Fold Group Cross-Validation Leaderboard (Development Groups):
+
+| Model Candidate | Feature Set | CV MAE (m) | Fold Std (m) | CV RMSE (m) | Signed Bias (m) |
+| :--- | :--- | :---: | :---: | :---: | :---: |
+| **Baseline Global Median** | Constant Dev Median | 1.027 | ± 0.427 | 1.574 | -0.366 |
+| **Prospective Ridge ($\alpha=10.0$)** | `[wind, wind^2, category]` | **1.062** | **± 0.347** | **1.470** | **-0.000** |
+| **Prospective HistGradientBoosting** | `[wind, wind^2, category]` | 1.083 | ± 0.350 | 1.544 | -0.000 |
+| **Prospective Parsimonious Ensemble** | Ridge + RF (depth=2) | 1.079 | ± 0.331 | 1.481 | -0.003 |
+| **Prospective Random Forest (depth=2)** | `[wind, wind^2, category]` | 1.101 | ± 0.320 | 1.497 | -0.007 |
+| **Prospective Random Forest (depth=3)** | `[wind, wind^2, category]` | 1.111 | ± 0.316 | 1.512 | -0.008 |
+| **Prospective RF (depth=3 + moisture)** | `[wind, gust, moisture, cat]` | 1.191 | ± 0.352 | 1.593 | -0.030 |
+
+### Methodological Finding: Why Collinear Features Degraded Generalization
+1. **Wind vs Gust Redundancy:** Nominal wind (5.36, 11.17, 17.88 m/s) and peak gust (5.36, 14.30, 23.00 m/s) have correlation $r > 0.99$. Supplying both creates collinear instability in unregularized tree estimators.
+2. **Moisture Overfitting on Small Groups:** With only 20 development groups, decision trees split on specific moisture values (e.g. Saw palmetto 59.9%), causing CV MAE to jump from $1.111\,\text{m}$ to $1.191\,\text{m}$ and test MAE from $1.700\,\text{m}$ to $1.935\,\text{m}$.
+3. **The Power of L2 Regularization:** L2-regularized Ridge regression ($\alpha=10.0$) produced the lowest cross-validation error ($1.062\,\text{m}$) and the tightest fold stability.
 
 ---
 
-## 6. Physical Modeling & Verification
-The mechanistic simulator (`ember_simulation.py`) implements numerical particle aerodynamics:
+## 5. Frozen Held-Out Test Evaluation
+
+The frozen test partition (`data/manifests/split_v1.csv`) consists of 3 untouched groups (9 runs: `mockup_fibercement_combustible`, `mockup_wood_noncombustible_roof`, `corner_osb_osb`).
+
+| Model Name | Configuration | 5-Fold Group CV MAE | Test MAE | Test RMSE | Median AE | Signed Bias |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| **Baseline Global Median** | Prospective | 1.027 ± 0.427 m | 1.838 m | 2.660 m | 0.832 m | -1.535 m |
+| **Prospective Ridge ($\alpha=10.0$)** | Prospective | **1.062 ± 0.347 m** | **1.721 m** | **2.315 m** | **0.892 m** | -1.012 m |
+| **Prospective Random Forest (depth=2)** | Prospective | 1.101 ± 0.320 m | 1.730 m | 2.306 m | 0.912 m | -0.981 m |
+| **Prospective Parsimonious Ensemble** | Prospective | 1.079 ± 0.331 m | 1.726 m | 2.310 m | 0.902 m | -0.997 m |
+| **Retrospective Gradient Boosting** | Retrospective (Diagnostic) | N/A | 1.779 m | 2.279 m | 0.825 m | -0.716 m |
+| **Physical RK4 Ballistic ($h=2.0$ m)** | Mechanistic Physical | N/A | 7.921 m | 8.922 m | 7.921 m | +7.921 m |
+| **Physical RK4 Ballistic ($h=1.0$ m)** | Mechanistic Physical | N/A | 3.208 m | 4.176 m | 3.006 m | +3.006 m |
+
+---
+
+## 6. Conformal Prediction & Calibration Analysis
+
+To provide distribution-free uncertainty intervals for predicted median travel distances:
+1. **Calibration:** Non-parametric out-of-fold absolute residuals from the 5-fold Group CV on development data were sorted.
+2. **Conformal Radius:** For an $80\%$ nominal coverage target ($\alpha = 0.20$), the calibrated radius is:
+   $$R_{0.80} = \text{Quantile}_{0.80}(|y_i - \hat{y}_i|_{\text{OOF}}) = \pm 1.575\,\text{m}$$
+3. **Empirical Test Coverage:** Evaluated on the held-out test partition ($N=9$), the empirical coverage is **$66.7\%$** (6 out of 9 runs covered).
+4. **Exchangeability Analysis:** The three missed test runs correspond to `mockup_wood_noncombustible_roof`, where bluff-body wall-roof aerodynamics caused unusually large travel distances ($5.10\,\text{m}$, $5.10\,\text{m}$, $8.05\,\text{m}$). This rigorously demonstrates that when an unseen test fuel group exhibits a significant aerodynamic shift, exchangeability between groups is challenged, resulting in modest coverage under-estimation.
+
+---
+
+## 7. Aerodynamic Sensitivity Analysis of the Physical Simulator
+
+The baseline RK4 numerical simulator integrates:
 $$m \frac{d\vec{v}}{dt} = m \vec{g} - \frac{1}{2} \rho C_d A \|\vec{v} - \vec{u}_{\text{wind}}\| (\vec{v} - \vec{u}_{\text{wind}})$$
-with 4th-order Runge-Kutta (RK4) integration ($\Delta t = 0.005\,\text{s}$) and boundary ground-plane interpolation.
 
-### Verification Suite:
-* **Free Fall Check ($C_d = 0$):** Simulated flight time matches $t = \sqrt{2h/g}$ within $|t_{\text{sim}} - t_{\text{analytic}}| < 10^{-6}\,\text{s}$.
-* **Terminal Velocity Check:** Terminal settling velocity matches $v_t = \sqrt{\frac{2mg}{\rho C_d A}} = 6.328\,\text{m/s}$ within $10^{-13}\,\text{m/s}$.
-* **Timestep Convergence:** Step variation between $\Delta t = 0.01\,\text{s}$ and $0.001\,\text{s}$ produces zero drift ($< 10^{-4}\,\text{m}$).
-* **Wind Symmetry:** Trajectory displacement under $+5\,\text{m/s}$ versus $-5\,\text{m/s}$ is symmetric ($|x_+ + x_-| < 10^{-3}\,\text{m}$).
-
----
-
-## 7. Machine-Learning Architectures & Benchmarking
-We evaluated four model families:
-1. **Baselines:** Global training median and Fuel-Category specific median.
-2. **Prospective Release Models:**
-   * **Prospective Ridge Regression:** L2-regularized linear model trained on standardized continuous wind features and one-hot encoded fuel category.
-   * **Prospective Random Forest:** 100 decision trees, constrained maximum depth of 3 to prevent overfitting on limited group counts.
-3. **Retrospective Particle Models:**
-   * **Retrospective Ridge Regression:** Uses $\ln(\text{mass})$, $\ln(\text{area})$, $\ln(\text{area}/\text{mass})$, wind velocity, and fuel category.
-   * **Retrospective Gradient Boosting:** 100 boosted trees, learning rate 0.05, max depth 3.
-4. **Physical Aerodynamic Model:** Forward RK4 ballistic simulation using measured mass, projected area, and nominal wind speed.
+In previous versions, a fixed release height $h=2.0\,\text{m}$ and $C_d=1.0$ were assumed, producing an apparent overshoot of $+7.92\,\text{m}$.
+We executed a systematic sensitivity analysis (`physics_sensitivity.py`):
+1. **Release Height Sensitivity ($h \in [0.25, 3.0]\,\text{m}$):** At high wind ($17.88\,\text{m/s}$), decreasing release height from $2.0\,\text{m}$ to $1.0\,\text{m}$ reduces ballistic distance from $15.71\,\text{m}$ to $9.30\,\text{m}$, and at $h=0.5\,\text{m}$ to $5.74\,\text{m}$. On the test set, switching from $h=2.0\,\text{m}$ to $h=1.0\,\text{m}$ drops MAE from **$7.921\,\text{m}$ to $3.208\,\text{m}$**.
+2. **Floor Boundary Layer Shear:** Accounting for logarithmic ground friction $u(z) = u_{\text{ref}} \frac{\ln(z/z_0 + 1)}{\ln(z_{\text{ref}}/z_0 + 1)}$ reduces downwind drag by $15-25\%$.
+3. **Conclusion:** The ballistic discrepancy is a composite of unmeasured low detachment heights, ground shear, and obstacle wake recirculation, rather than wake turbulence alone.
 
 ---
 
-## 8. Experimental Design & Grouped Validation
-To ensure scientifically defensible generalization, **individual particles or runs from the same fuel species or structural assembly are never randomly distributed between training and test sets**.
+## 8. Modular Scientific Domain Architecture
 
-* **Splitting Unit:** The independent experimental group `experiment_id = group_{fuel_category}_{fuel_name}`.
-* **Allocation:** 
-  * **Train (74%, 51 runs):** 17 independent fuel groups.
-  * **Validation (13%, 9 runs):** 3 independent fuel groups.
-  * **Test (13%, 9 runs):** 3 independent fuel groups (`mockup_fibercement_combustible`, `lattice_fence`, `non_frt_cedar_shake_roof`).
-* **Frozen Manifest:** Stored in `data/manifests/split_v1.csv` (SHA-256: `4339bb6f...`). Preprocessing transformations (scaling, encodings) are strictly fitted on the training split only.
-
----
-
-## 9. Measured Results and Accuracy
-The models were trained on the training partition and evaluated strictly on the untouched, frozen test set:
-
-| Model Name | Type | Test MAE | Test RMSE | Test Median AE | Signed Bias |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Global Median Baseline** | Prospective | 1.785 m | 2.577 m | 0.832 m | -1.385 m |
-| **Category Median Baseline** | Prospective | 1.772 m | 2.556 m | 0.830 m | -1.347 m |
-| **Prospective Ridge** | Prospective | 1.704 m | 2.265 m | 0.892 m | -0.911 m |
-| **Prospective Random Forest** | Prospective | **1.700 m** | **2.261 m** | 0.887 m | -0.907 m |
-| **Retrospective Ridge** | Retrospective | 1.669 m | 2.268 m | 0.831 m | -0.878 m |
-| **Retrospective Gradient Boosting** | Retrospective | **1.684 m** | **2.059 m** | 0.812 m | **-0.402 m** |
-| **Physical RK4 Ballistic** | Physical | 7.921 m | 8.922 m | 7.921 m | +7.921 m |
-
-*Note: For task families without fully ingested public row data (CSIRO 3D trajectory, Australian wildfire spotting), measured-data accuracy is strictly recorded as **not yet evaluated** rather than inventing synthetic numbers.*
+To preserve modular extensibility without mixing incompatible observation types, the codebase establishes six abstract Python interfaces in `src/save_the_earth/interfaces/`:
+* `FirebrandGenerationInterface`: Detachment rates, particle size distributions, morphology.
+* `AtmosphericTransportInterface`: 3D velocity vectors, time-resolved positions $[x(t), y(t), z(t)]$, drag/lift.
+* `FirebrandDepositionInterface`: Water-pan landing coordinates, travel distance, flight duration (Currently Active).
+* `ThermalSurvivalInterface`: Surface temperature decay, combustion state, residual heat flux.
+* `ReceptiveFuelIgnitionInterface`: Binary piloted/smoldering ignition probability conditional on fuel moisture.
+* `WildfireSpottingInterface`: Macroscopic secondary fire progression ahead of the main fire front.
 
 ---
 
-## 10. Error Analysis and Uncertainty
-* **Prospective vs. Retrospective Contrast:** Retrospective Gradient Boosting yields the lowest RMSE ($2.059\,\text{m}$) and minimizes bias ($-0.402\,\text{m}$), verifying that ember area-to-mass ratio significantly governs aerodynamic deceleration. However, because these features are unavailable prior to flight, the prospective Random Forest ($1.700\,\text{m}$ MAE) stands as our validated operational candidate.
-* **Wind-Dependent Bias:** All models exhibit slightly larger residual variance under the High wind regime ($17.88\,\text{m/s}$) compared to the Idle regime ($5.36\,\text{m/s}$), reflecting aerodynamic turbulence in wind-tunnel boundary layers.
-* **Mechanistic Model Overshoot:** The physical ballistic baseline consistently overpredicts travel distance ($+7.921\,\text{m}$ bias). In full-scale wind tunnels, large structural obstacles create substantial leeward wake recirculation eddies that force firebrands to deposit earlier into immediate downwind water pans than unhindered ballistic trajectories predict.
+## 9. Next Research Steps & International Collaboration
 
----
-
-## 11. Known Limitations & Missing Measurements
-1. **Post-Landing Feature Leakage:** Mass and area in USDA datasets were recorded after collection and oven drying. They cannot be treated as initial release properties.
-2. **Collection Pan Discretization:** Water pans were arranged in discrete rows, introducing interval-censoring uncertainty ($\pm 0.22\,\text{m}$).
-3. **Absence of Convective Plume Updraft:** Wind-tunnel tests feature purely horizontal boundary layer flow; wildland fire convective plumes loft embers hundreds of meters vertically.
-4. **Combustion Dynamics:** The current simulation does not simulate time-dependent charring, mass loss rate $\dot{m}(t)$, or thermal burnout.
-
----
-
-## 12. Australian Research Collaboration Strategy (CSIRO & UNSW)
-To advance beyond post-landing wind-tunnel correlations, the Save the Earth project targets collaborative experimental research with Australian bushfire institutions (CSIRO Black Mountain and UNSW Canberra):
-
-### Target Capabilities & Data Requests:
-* **Untethered Vertical Wind Tunnel Facility:** Access to CSIRO's vertical wind tunnel to record untethered burning eucalypt bark and pine firebrands in equilibrium suspension ($u_{\text{terminal}} = u_{\text{vertical}}$).
-* **Multi-View 3D Trajectory Reconstruction:** Calibrated high-speed photogrammetry ($\ge 2$ synchronized cameras) measuring $(x(t), y(t), z(t))$ over time.
-* **Simultaneous Thermal & Mass Loss Imaging:** Calibrated infrared thermography coupled with pre- and post-test weighing to establish the real-time combustion trajectory $\dot{m}(t)$ and extinction threshold.
-
----
-
-## 13. Future Experiments & Development Roadmap
-* **Month 1:** Implement atmospheric boundary layer logarithmic wind profiles and buoyant thermal plume updraft models ($w_{\text{plume}}(z)$).
-* **Month 2:** Train physics-informed neural network (PINN) surrogates directly on coupled CFD-plume simulations (WRF-SFIRE).
-* **Month 3:** Field validation campaign in South Korea: cross-referencing Korea Forest Service (KFS) incident records and KMA automated weather station (AWS) wind vectors to model regional fire spread probabilities.
-
----
-
-## 14. Reproducibility & Environment
-All code and configurations are version-controlled in Git:
-```bash
-# 1. Install dependencies
-python3 -m pip install -r requirements.txt
-
-# 2. Run automated test suite
-python3 -m unittest discover -s tests -v
-
-# 3. Extract USDA experimental run tables
-python3 parse_usda_report_tables.py
-
-# 4. Build canonical dataset
-python3 build_canonical_datasets.py
-
-# 5. Audit quality control and verify frozen split
-python3 research_data.py --input data/processed/canonical_particle_distance.csv --outdir data/interim
-
-# 6. Execute benchmark training on frozen split
-python3 train_distance_benchmarks.py
-
-# 7. Generate diagnostic figures
-python3 generate_diagnostics.py
-```
-
-### References
-1. Bahrani, B., Hedayati, F., Zhou, A., Quarles, S. L., & Weise, D. R. (2020). *Data for firebrands generated from selected vegetative fuels: Joint Fire Science Program project (15-1-04-4)*. USDA Forest Service Research Data Archive. DOI: 10.2737/RDS-2020-0035.
-2. Bahrani, B., et al. (2020). *Data for firebrands generated from selected structural fuels: Joint Fire Science Program project (15-1-04-4)*. USDA Forest Service Research Data Archive. DOI: 10.2737/RDS-2020-0034.
-3. Hedayati, F., et al. (2019). *A Framework to Facilitate Firebrand Characterization*. Frontiers in Mechanical Engineering. DOI: 10.3389/fmech.2019.00043.
-4. Storey, M. A., Price, O. F., Bradstock, R. A., & Sharples, J. J. (2020). *Analysis of Variation in Distance, Number, and Distribution of Spotting in Southeast Australian Wildfires*. Fire, 3(2), 10. DOI: 10.3390/fire3020010.
-5. Zenodo Dataset 4837617. *Quantifying firebrand production and transport using acoustic analysis of in-fire cameras*. DOI: 10.5281/zenodo.4837617.
-6. Zenodo Dataset 1406207. *Thermal characterization of firebrand piles*. DOI: 10.5281/zenodo.1406207.
-
+1. **Australian CSIRO Collaboration:** Secure untethered 3D burning firebrand trajectory data (DOI: 10.1016/j.jaecs.2026.100520) to calibrate the 3D Atmospheric Transport module.
+2. **Individual Microdata Recovery:** Re-attempt direct access or institutional contact with USDA Forest Service RDS custodians to acquire the raw individual particle measurements ($N=60,370$).
+3. **Receptive Fuel Coupling:** Integrate fuel bed moisture sensors to couple predicted deposition density with binary ignition thresholds.

@@ -1,0 +1,40 @@
+# Training Configuration for Neural Firebrand Trajectory Surrogate
+seed: 42
+device: "auto" # mps, cuda, or cpu
+
+# Data Paths
+data:
+  dataset_npz: "data/synthetic/trajectories_10k.npz"
+  split_json: "data/manifests/trajectory_splits.json"
+  summary_csv: "data/synthetic/trajectories_10k_summary.csv"
+
+# Model Architecture
+architecture:
+  model_type: "neural_surrogate" # neural_surrogate or physics_hybrid
+  hidden_dims: [128, 128, 128, 64]
+  activation: "gelu"
+  dropout: 0.05
+  use_layer_norm: true
+
+# Training Hyperparameters
+training:
+  batch_size: 256
+  learning_rate: 1.0e-3
+  weight_decay: 1.0e-4
+  num_epochs: 40
+  early_stopping_patience: 10
+  lr_scheduler: "cosine"
+  min_lr: 1.0e-5
+  grad_clip_norm: 1.0
+
+# Loss Function Weights
+loss:
+  trajectory_pos_weight: 1.0
+  landing_coord_weight: 2.0
+  flight_time_weight: 0.5
+  smoothness_weight: 0.05
+
+checkpointing:
+  save_dir: "checkpoints"
+  model_filename: "best_trajectory_model.pt"
+  log_filename: "training_history.json"
