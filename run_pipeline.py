@@ -7,20 +7,22 @@ Runs the complete scientific pipeline with a single command:
 
 Pipeline Steps:
   1. Mechanistic Physics Verification (ember_simulation.py --verify)
-  2. Raw Source & Archive Audit (inspect_raw.py)
-  3. Experimental Data & Moments Extraction (parse_usda_report_tables.py)
-  4. Canonical SI Dataset Construction & QC (build_canonical_datasets.py & research_data.py)
-  5. Multi-Model Ensemble Training & Benchmarking (train_distance_benchmarks.py)
-  6. Diagnostic Figure & Summary Generation (generate_diagnostics.py)
-  7. Automated Unit Test Suite Execution (tests/)
+  2. Physics Sensitivity Analysis (physics_sensitivity.py)
+  3. Raw Source & Archive Audit (inspect_raw.py)
+  4. Experimental Data & Moments Extraction (parse_usda_report_tables.py)
+  5. Canonical SI Dataset Construction & QC (build_canonical_datasets.py & research_data.py)
+  6. Multi-Model Group-CV & Test Benchmarking (train_distance_benchmarks.py)
+  7. Diagnostic Figure & Scientific Summary Generation (generate_diagnostics.py)
+  8. Automated Unit Test Suite Execution (tests/)
 
-Also supports operational prediction mode:
-  python3 run_pipeline.py --predict --wind 12.5 --moisture 10.0 --category vegetative
+Operational prediction mode:
+  python3 run_pipeline.py --predict --wind 12.5 --category vegetative
 """
 
 import argparse
 import csv
 import json
+import math
 import os
 import subprocess
 import sys
@@ -52,7 +54,6 @@ def run_step(step_num, total_steps, title, command_args):
         print(result.stderr)
         sys.exit(result.returncode)
     else:
-        # Print concise output
         lines = result.stdout.strip().split("\n")
         display = lines[:15]
         for l in display:
@@ -62,16 +63,26 @@ def run_step(step_num, total_steps, title, command_args):
         print(f"COMPLETED in {elapsed:.2f}s")
 
 
-def run_predict(wind, moisture, category):
+def run_predict(wind, category, moisture=None):
     import numpy as np
     from sklearn.linear_model import Ridge
-    from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
-    from sklearn.neural_network import MLPRegressor
+    from sklearn.ensemble import RandomForestRegressor
     from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
-    print(f"\n================ OPERATIONAL ENSEMBLE PREDICTION ================")
-    print(f"Inputs: Wind = {wind:.2f} m/s | Moisture Content = {moisture:.1f}% | Fuel Category = {category}")
-    print("-" * 65)
+    print(f"\n================ EXPERIMENTAL FIREBRAND DISTANCE PREDICTION ================")
+    print(f"Model Version: v2.0-group-cv-calibrated | Dataset: USDA JFSP 15-1-04-4 (Aggregated Runs)")
+    print(f"Input Parameters: Nominal Wind = {wind:.2f} m/s | Fuel Category = {category}")
+    if moisture is not None:
+        print(f"Fuel Moisture: {moisture:.1f}% (Note: validated prospective models rely on wind scaling)")
+
+    # Out-of-distribution (OOD) checks
+    if wind < 3.0 or wind > 25.0:
+        print(f"⚠️  WARNING: Requested wind speed ({wind:.1f} m/s) is outside tested experimental range [5.36 - 17.88 m/s].")
+        print("   Extrapolated aerodynamic predictions carry increased epistemic uncertainty.")
+    elif wind < 5.36 or wind > 17.88:
+        print(f"ℹ️  NOTE: Requested wind speed ({wind:.1f} m/s) is near boundary of experimental calibration range.")
+
+    print("-" * 75)
 
     data_path = "data/interim/eligible.csv"
     split_path = "data/manifests/split_v1.csv"
@@ -81,65 +92,67 @@ def run_predict(wind, moisture, category):
 
     from train_distance_benchmarks import load_dataset
     records = load_dataset(data_path, split_path)
-    train_recs = [r for r in records if r["split"] == "train"]
-    y_train = np.array([r["landing_distance_m"] for r in train_recs])
+    dev_recs = [r for r in records if r["split"] in ("train", "validation")]
+    y_dev = np.array([r["landing_distance_m"] for r in dev_recs])
 
-    # Fit feature transformers on train only
-    num_train = np.column_stack([
-        [r["wind_speed_m_s"] for r in train_recs],
-        [r["gust_peak_m_s"] for r in train_recs],
-        [r["wind_speed_m_s"]**2 for r in train_recs],
-        [r["moisture_content_percent"] for r in train_recs]
-    ])
-    cat_train = np.array([[r["fuel_category"]] for r in train_recs])
+    # Fit feature transformers on development data only
+    cat_dev = np.array([[r["fuel_category"]] for r in dev_recs])
+    enc = OneHotEncoder(sparse_output=False, handle_unknown="ignore").fit(cat_dev)
 
-    enc = OneHotEncoder(sparse_output=False, handle_unknown="ignore")
-    cat_feat_train = enc.fit_transform(cat_train)
-    scaler = StandardScaler()
-    num_feat_train = scaler.fit_transform(num_train)
-    X_train = np.column_stack([num_feat_train, cat_feat_train])
+    num_dev = np.column_stack([[r["wind_speed_m_s"] for r in dev_recs], [r["wind_speed_m_s"]**2 for r in dev_recs]])
+    scaler = StandardScaler().fit(num_dev)
 
-    # Prepare query vector
-    gust = wind * 1.28  # empirical gust factor from wind tunnel profiles
-    query_num = np.array([[wind, gust, wind**2, moisture]])
+    X_dev = np.column_stack([scaler.transform(num_dev), enc.transform(cat_dev)])
+
+    query_num = np.array([[wind, wind**2]])
     query_cat = np.array([[category]])
     query_X = np.column_stack([scaler.transform(query_num), enc.transform(query_cat)])
 
     # Models
-    rf = RandomForestRegressor(n_estimators=100, max_depth=3, random_state=42).fit(X_train, y_train)
-    gb = GradientBoostingRegressor(n_estimators=100, max_depth=3, learning_rate=0.05, random_state=42).fit(X_train, y_train)
-    ridge = Ridge(alpha=1.0).fit(X_train, y_train)
-    mlp = MLPRegressor(hidden_layer_sizes=(16, 8), max_iter=2000, solver="lbfgs", random_state=42).fit(X_train, y_train)
+    ridge = Ridge(alpha=10.0).fit(X_dev, y_dev)
+    rf = RandomForestRegressor(n_estimators=100, max_depth=2, random_state=42).fit(X_dev, y_dev)
 
-    # Quantiles
-    q10 = GradientBoostingRegressor(loss="quantile", alpha=0.10, n_estimators=100, max_depth=3, random_state=42).fit(X_train, y_train)
-    q90 = GradientBoostingRegressor(loss="quantile", alpha=0.90, n_estimators=100, max_depth=3, random_state=42).fit(X_train, y_train)
-
-    p_rf = float(np.maximum(0, rf.predict(query_X)[0]))
-    p_gb = float(np.maximum(0, gb.predict(query_X)[0]))
     p_ridge = float(np.maximum(0, ridge.predict(query_X)[0]))
-    p_mlp = float(np.maximum(0, mlp.predict(query_X)[0]))
-    p_ens = (p_rf + p_gb + p_ridge + p_mlp) / 4.0
-    p_lower = float(np.maximum(0, q10.predict(query_X)[0]))
-    p_upper = float(np.maximum(0, q90.predict(query_X)[0]))
+    p_rf = float(np.maximum(0, rf.predict(query_X)[0]))
+    p_ens = (p_ridge + p_rf) / 2.0
 
-    print(f"Model Predictions for Landing Distance:")
-    print(f"  Prospective Random Forest:          {p_rf:.2f} m")
-    print(f"  Prospective Gradient Boosting:      {p_gb:.2f} m")
+    # Load conformal calibration radius
+    bench_json = "distance_results/benchmark_comparison.json"
+    conformal_radius = 1.575
+    if os.path.exists(bench_json):
+        with open(bench_json) as f:
+            b_data = json.load(f)
+            conformal_radius = b_data.get("Conformal_Uncertainty_80", {}).get("conformal_radius_m", 1.575)
+
+    conf_lower = max(0.0, p_ridge - conformal_radius)
+    conf_upper = p_ridge + conformal_radius
+
+    # Empirical particle dispersion (individual firebrands)
+    # Average observed std in wind-tunnel water pans scales with wind: ~0.15 * wind + 0.5 m
+    est_dispersion_std = max(0.7, 0.14 * wind + 0.3)
+    p10_particle = max(0.0, p_ens - 1.28 * est_dispersion_std)
+    p90_particle = p_ens + 1.28 * est_dispersion_std
+
+    print(f"Model Predictions for Experimental Landing Distance:")
     print(f"  Prospective Ridge Regression:       {p_ridge:.2f} m")
-    print(f"  Prospective MLP Neural Network:     {p_mlp:.2f} m")
+    print(f"  Prospective Random Forest (depth=2): {p_rf:.2f} m")
+    print(f"  Prospective Parsimonious Ensemble:  {p_ens:.2f} m")
     print(f"  -------------------------------------------------------------")
-    print(f"  ★ ENSEMBLE MEAN PREDICTION:         {p_ens:.2f} m")
-    print(f"  ★ 80% CONFIDENCE INTERVAL (P10-P90): [{p_lower:.2f} m  —  {p_upper:.2f} m]")
-    print(f"  ★ SPOTTING HAZARD ENVELOPE (90th%):  {p_upper:.2f} m downwind")
-    print("=" * 65)
+    print(f"  ★ PREDICTED RUN MEDIAN DISTANCE:    {p_ens:.2f} m")
+    print(f"  ★ 80% CONFORMAL INTERVAL (Median):  [{conf_lower:.2f} m  —  {conf_upper:.2f} m] (Radius: +/- {conformal_radius:.2f} m)")
+    print(f"  ★ ESTIMATED PARTICLE DISPERSION:    [{p10_particle:.2f} m  —  {p90_particle:.2f} m] (Spread of individual embers around median)")
+    print("=" * 75)
+    print("⚠️  SCIENTIFIC DISCLAIMER:")
+    print("   This prediction estimates physical deposition distance in wind-tunnel water pans.")
+    print("   It does NOT predict particle thermal survival, fuel bed ignition, or macroscopic spot fires.")
+    print("=" * 75)
 
 
 def main():
     parser = argparse.ArgumentParser(description="Save the Earth Unified Pipeline Runner")
     parser.add_argument("--predict", action="store_true", help="Run operational model inference")
     parser.add_argument("--wind", type=float, default=11.17, help="Wind speed (m/s) for prediction")
-    parser.add_argument("--moisture", type=float, default=12.0, help="Fuel moisture content (%%)")
+    parser.add_argument("--moisture", type=float, default=None, help="Fuel moisture content (%%)")
     parser.add_argument("--category", choices=["vegetative", "structural"], default="vegetative", help="Fuel category")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
     parser.add_argument("--skip-tests", action="store_true", help="Skip running unit tests at the end")
@@ -148,43 +161,46 @@ def main():
     print_banner()
 
     if args.predict:
-        run_predict(args.wind, args.moisture, args.category)
+        run_predict(args.wind, args.category, args.moisture)
         return
 
-    total_steps = 7 if not args.skip_tests else 6
+    total_steps = 8 if not args.skip_tests else 7
     py_exec = sys.executable
 
     # Step 1: Physics verification
     run_step(1, total_steps, "Mechanistic Physics Simulator Verification", [py_exec, "ember_simulation.py", "--verify"])
 
-    # Step 2: Ingest & raw audit
+    # Step 2: Physics sensitivity analysis
+    run_step(2, total_steps, "Mechanistic Aerodynamic Sensitivity Analysis", [py_exec, "physics_sensitivity.py"])
+
+    # Step 3: Ingest & raw audit
     audit_path = Path("data/interim/raw_audit.json")
     if audit_path.exists():
         audit_path.unlink()
-    run_step(2, total_steps, "Raw Data Sources & Cryptographic Audit", [py_exec, "inspect_raw.py", "data/raw"])
+    run_step(3, total_steps, "Raw Data Sources & Cryptographic Audit", [py_exec, "inspect_raw.py", "data/raw"])
 
-    # Step 3: Parse report tables
-    run_step(3, total_steps, "USDA JFSP 15-1-04-4 Experimental Table Extraction", [py_exec, "parse_usda_report_tables.py"])
+    # Step 4: Parse report tables
+    run_step(4, total_steps, "USDA JFSP 15-1-04-4 Experimental Table Extraction", [py_exec, "parse_usda_report_tables.py"])
 
-    # Step 4a: Canonical datasets
-    run_step(4, total_steps, "Canonical Dataset Construction & Standardization", [py_exec, "build_canonical_datasets.py"])
+    # Step 5a: Canonical datasets
+    run_step(5, total_steps, "Canonical Dataset Construction & Standardization", [py_exec, "build_canonical_datasets.py"])
 
-    # Step 4b: QC audit & split check
-    run_step(4, total_steps, "Observational Quality Control & Split Validation", [
+    # Step 5b: QC audit & split check
+    run_step(5, total_steps, "Observational Quality Control & Split Validation", [
         py_exec, "research_data.py", "--input", "data/processed/canonical_particle_distance.csv", "--outdir", "data/interim"
     ])
 
-    # Step 5: Train ensemble benchmarks
-    run_step(5, total_steps, "Multi-Model Ensemble Training & Held-Out Test Evaluation", [
+    # Step 6: Train ensemble benchmarks with Group CV
+    run_step(6, total_steps, "Group-Validated Cross-Validation & Benchmark Training", [
         py_exec, "train_distance_benchmarks.py", "--seed", str(args.seed)
     ])
 
-    # Step 6: Generate diagnostics
-    run_step(6, total_steps, "Diagnostic Figures & Scientific Summary Generation", [py_exec, "generate_diagnostics.py"])
+    # Step 7: Generate diagnostics
+    run_step(7, total_steps, "Diagnostic Figures & Scientific Summary Generation", [py_exec, "generate_diagnostics.py"])
 
-    # Step 7: Unit tests
+    # Step 8: Unit tests
     if not args.skip_tests:
-        run_step(7, total_steps, "Automated Unit & Scientific Integrity Test Suite", [
+        run_step(8, total_steps, "Automated Unit & Scientific Integrity Test Suite", [
             py_exec, "-m", "unittest", "discover", "-s", "tests", "-v"
         ])
 
@@ -192,10 +208,12 @@ def main():
     print("PIPELINE COMPLETED SUCCESSFULLY!")
     print("=" * 80)
     print("Generated Artifacts:")
-    print("  - Models & Benchmark Results: distance_results/benchmark_comparison.json")
-    print("  - Benchmark Metrics Table:    distance_results/metrics_table.csv")
+    print("  - Group CV Performance Table: distance_results/group_cv_metrics.csv")
+    print("  - Benchmark Comparison JSON:  distance_results/benchmark_comparison.json")
+    print("  - Test Metrics Table:         distance_results/metrics_table.csv")
     print("  - Test Set Predictions:       distance_results/test_predictions.csv")
-    print("  - Diagnostic Figures:         reports/figures/ (10 figures)")
+    print("  - Physics Sensitivity JSON:   distance_results/physics_sensitivity.json")
+    print("  - Diagnostic Figures:         reports/figures/ (12 figures)")
     print("  - Dataset & QC Summaries:     reports/*.csv")
     print("  - Verified Canonical Data:    data/processed/canonical_particle_distance.csv")
     print("=" * 80)

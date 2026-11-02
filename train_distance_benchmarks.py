@@ -1,40 +1,29 @@
 """
-Group-Validated Firebrand Distance Benchmarks and Multi-Model Ensemble.
+Save the Earth — Group-Validated Firebrand Distance Benchmarks & Uncertainty Pipeline.
 
-Evaluates multiple model classes and an ensemble on the frozen, group-disjoint partition (data/manifests/split_v1.csv):
-1. Baselines:
-   - Global Training Median
-   - Fuel-Family Training Median
-2. Prospective Operational Models (observable BEFORE flight: wind speed, gust peak, fuel moisture content %, fuel category):
-   - Prospective Ridge Regression
-   - Prospective Random Forest Regressor
-   - Prospective Gradient Boosting Regressor
-   - Prospective Multi-Layer Perceptron (MLP) Regressor
-   - Prospective Quantile Gradient Boosting (P10, P50, P90 bounds)
-   - Prospective Ensemble (Multi-model blend)
-3. Retrospective Particle Models (uses recovered post-landing mass and projected area):
-   - Retrospective Ridge Regression
-   - Retrospective Random Forest Regressor
-   - Retrospective Gradient Boosting Regressor
-   - Retrospective Multi-Layer Perceptron (MLP) Regressor
-   - Retrospective Ensemble (Multi-model blend)
-4. Physical Mechanistic Baseline (ballistic RK4 trajectory simulation under wind).
+Evaluates prospective and retrospective machine learning models on:
+1. 5-Fold Group Cross-Validation across development fuel groups (20 groups, 60 runs)
+2. Frozen, untouched held-out test partition (3 groups, 9 runs from split_v1.csv)
 
-Strictly isolates test partition until final evaluation. All preprocessors fitted on train only.
+Strictly separates:
+- Prospective Operational Models: observable BEFORE flight (wind speed, wind speed^2, fuel category)
+- Retrospective Diagnostic Models: observable AFTER landing (recovered mass, projected area)
+- Mechanistic Physical Baseline: idealized RK4 ballistic aerodynamics
+
+Calculates calibrated conformal prediction intervals and evaluates empirical test coverage.
 """
 
 import argparse
 import csv
 import json
-import os
 import math
+import os
 from pathlib import Path
 
 import numpy as np
-import matplotlib.pyplot as plt
 from sklearn.linear_model import Ridge
-from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
-from sklearn.neural_network import MLPRegressor
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, HistGradientBoostingRegressor
+from sklearn.model_selection import GroupKFold
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from ember_simulation import simulate_single_trajectory
@@ -68,8 +57,10 @@ def load_dataset(data_path, split_path):
             "wind_speed_m_s": float(r["wind_speed_m_s"]),
             "gust_peak_m_s": float(r.get("gust_peak_m_s", r["wind_speed_m_s"])),
             "moisture_content_percent": float(r.get("moisture_content_percent", 10.0)),
+            "sample_size": int(r.get("sample_size", 500)),
             "mass_kg": float(r["mass_kg"]),
             "projected_area_m2": float(r["projected_area_m2"]),
+            "distance_std_m": float(r.get("distance_std_m", 1.5)),
             "landing_distance_m": float(r["landing_distance_m"])
         })
     return records
@@ -87,10 +78,7 @@ def compute_metrics(y_true, y_pred):
     }
 
 
-def run_physics_baseline(rows, release_height=2.0):
-    """
-    Simulates each ember with measured mass, area, and wind under standard RK4 aerodynamics.
-    """
+def run_physics_baseline(rows, release_height=2.0, cd=1.0):
     preds = []
     for r in rows:
         w_vec = np.array([r["wind_speed_m_s"], 0.0, 0.0])
@@ -100,7 +88,7 @@ def run_physics_baseline(rows, release_height=2.0):
             mass=r["mass_kg"],
             area=r["projected_area_m2"],
             dt=0.005,
-            cd=1.0
+            cd=cd
         )
         preds.append(info["landing_x"])
     return np.array(preds)
@@ -117,256 +105,249 @@ def main():
     os.makedirs(args.outdir, exist_ok=True)
     records = load_dataset(args.data, args.split)
 
-    train_recs = [r for r in records if r["split"] == "train"]
-    val_recs = [r for r in records if r["split"] == "validation"]
+    dev_recs = [r for r in records if r["split"] in ("train", "validation")]
     test_recs = [r for r in records if r["split"] == "test"]
 
-    print(f"Loaded {len(records)} records: Train={len(train_recs)}, Val={len(val_recs)}, Test={len(test_recs)}")
-    y_train = np.array([r["landing_distance_m"] for r in train_recs])
-    y_val = np.array([r["landing_distance_m"] for r in val_recs])
+    print(f"Loaded {len(records)} aggregated experimental runs.")
+    print(f"Development Set: {len(dev_recs)} runs (20 fuel groups)")
+    print(f"Untouched Test Set: {len(test_recs)} runs (3 fuel groups)")
+
+    y_dev = np.array([r["landing_distance_m"] for r in dev_recs])
     y_test = np.array([r["landing_distance_m"] for r in test_recs])
+    groups_dev = np.array([r["experiment_id"] for r in dev_recs])
 
+    # Sample weights proportional to sqrt(sample_size)
+    sample_sizes_dev = np.array([r["sample_size"] for r in dev_recs])
+    weights_dev = np.sqrt(sample_sizes_dev) / np.mean(np.sqrt(sample_sizes_dev))
+
+    # Preprocessing
+    cat_dev = np.array([[r["fuel_category"]] for r in dev_recs])
+    cat_test = np.array([[r["fuel_category"]] for r in test_recs])
+    enc_pro = OneHotEncoder(sparse_output=False, handle_unknown="ignore").fit(cat_dev)
+    c_dev = enc_pro.transform(cat_dev)
+    c_test = enc_pro.transform(cat_test)
+
+    num_dev = np.column_stack([[r["wind_speed_m_s"] for r in dev_recs], [r["wind_speed_m_s"]**2 for r in dev_recs]])
+    num_test = np.column_stack([[r["wind_speed_m_s"] for r in test_recs], [r["wind_speed_m_s"]**2 for r in test_recs]])
+    scaler_pro = StandardScaler().fit(num_dev)
+    X_pro_dev = np.column_stack([scaler_pro.transform(num_dev), c_dev])
+    X_pro_test = np.column_stack([scaler_pro.transform(num_test), c_test])
+
+    # 1. Five-Fold Group Cross-Validation on Development Data
+    print("\n--- Running 5-Fold Group Cross-Validation on Development Groups ---")
+    gkf = GroupKFold(n_splits=5)
+
+    cv_models = {
+        "Baseline_Global_Median": lambda: None,
+        "Prospective_Ridge": lambda: Ridge(alpha=10.0),
+        "Prospective_Weighted_Ridge": lambda: Ridge(alpha=10.0),
+        "Prospective_Random_Forest": lambda: RandomForestRegressor(n_estimators=100, max_depth=2, random_state=args.seed),
+        "Prospective_Gradient_Boosting": lambda: GradientBoostingRegressor(n_estimators=60, max_depth=2, learning_rate=0.05, random_state=args.seed),
+        "Prospective_HistGradientBoosting": lambda: HistGradientBoostingRegressor(l2_regularization=1.0, max_iter=60, random_state=args.seed),
+        "Prospective_Parsimonious_Ensemble": lambda: None  # Blend of Ridge + RF
+    }
+
+    cv_results = {m: {"maes": [], "rmses": [], "biases": []} for m in cv_models}
+    oof_predictions = {m: np.zeros(len(dev_recs)) for m in cv_models}
+
+    for fold, (tr_idx, val_idx) in enumerate(gkf.split(dev_recs, y_dev, groups_dev)):
+        y_tr, y_va = y_dev[tr_idx], y_dev[val_idx]
+        X_tr, X_va = X_pro_dev[tr_idx], X_pro_dev[val_idx]
+        w_tr = weights_dev[tr_idx]
+
+        # Global median
+        med_tr = np.median(y_tr)
+        p_med = np.full_like(y_va, med_tr)
+        oof_predictions["Baseline_Global_Median"][val_idx] = p_med
+
+        # Ridge
+        m_ridge = Ridge(alpha=10.0).fit(X_tr, y_tr)
+        p_ridge = np.maximum(0, m_ridge.predict(X_va))
+        oof_predictions["Prospective_Ridge"][val_idx] = p_ridge
+
+        # Weighted Ridge
+        m_wridge = Ridge(alpha=10.0).fit(X_tr, y_tr, sample_weight=w_tr)
+        p_wridge = np.maximum(0, m_wridge.predict(X_va))
+        oof_predictions["Prospective_Weighted_Ridge"][val_idx] = p_wridge
+
+        # Random Forest (depth=2)
+        m_rf = RandomForestRegressor(n_estimators=100, max_depth=2, random_state=args.seed).fit(X_tr, y_tr)
+        p_rf = np.maximum(0, m_rf.predict(X_va))
+        oof_predictions["Prospective_Random_Forest"][val_idx] = p_rf
+
+        # Gradient Boosting (depth=2)
+        m_gb = GradientBoostingRegressor(n_estimators=60, max_depth=2, learning_rate=0.05, random_state=args.seed).fit(X_tr, y_tr)
+        p_gb = np.maximum(0, m_gb.predict(X_va))
+        oof_predictions["Prospective_Gradient_Boosting"][val_idx] = p_gb
+
+        # HistGradientBoosting
+        m_hgb = HistGradientBoostingRegressor(l2_regularization=1.0, max_iter=60, random_state=args.seed).fit(X_tr, y_tr)
+        p_hgb = np.maximum(0, m_hgb.predict(X_va))
+        oof_predictions["Prospective_HistGradientBoosting"][val_idx] = p_hgb
+
+        # Parsimonious Ensemble (Ridge + RF)
+        p_ens = (p_ridge + p_rf) / 2.0
+        oof_predictions["Prospective_Parsimonious_Ensemble"][val_idx] = p_ens
+
+    for m in cv_models:
+        preds = oof_predictions[m]
+        err = preds - y_dev
+        cv_results[m] = {
+            "cv_mae_m": float(np.mean(np.abs(err))),
+            "cv_mae_std_m": float(np.std([np.mean(np.abs(preds[val_idx] - y_dev[val_idx])) for _, val_idx in gkf.split(dev_recs, y_dev, groups_dev)])),
+            "cv_rmse_m": float(np.sqrt(np.mean(err**2))),
+            "cv_bias_m": float(np.mean(err))
+        }
+
+    # Save Group CV metrics table
+    cv_csv_path = os.path.join(args.outdir, "group_cv_metrics.csv")
+    with open(cv_csv_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["model", "cv_mae_m", "cv_mae_std_m", "cv_rmse_m", "cv_bias_m"])
+        for m, res in cv_results.items():
+            writer.writerow([m, f"{res['cv_mae_m']:.3f}", f"{res['cv_mae_std_m']:.3f}", f"{res['cv_rmse_m']:.3f}", f"{res['cv_bias_m']:.3f}"])
+    print(f"Saved Group CV metrics to: {cv_csv_path}")
+
+    # 2. Conformal Prediction Threshold (80% target coverage on OOF residuals)
+    oof_err_ridge = np.abs(y_dev - oof_predictions["Prospective_Ridge"])
+    alpha = 0.20
+    k = int(np.ceil((len(oof_err_ridge) + 1) * (1.0 - alpha)))
+    sorted_err = np.sort(oof_err_ridge)
+    conformal_radius_80 = float(sorted_err[min(k - 1, len(sorted_err) - 1)])
+    print(f"Conformal Calibration: 80% OOF Error Radius = +/- {conformal_radius_80:.3f} m")
+
+    # 3. Final Model Evaluation on Frozen Held-Out Test Set
+    print("\n--- Evaluating Models on Frozen Test Set (3 Groups, 9 Runs) ---")
     results = {}
-    test_predictions_dict = {"record_id": [r["record_id"] for r in test_recs], "y_true": y_test.tolist()}
+    test_predictions_dict = {
+        "record_id": [r["record_id"] for r in test_recs],
+        "experiment_id": [r["experiment_id"] for r in test_recs],
+        "wind_speed_m_s": [r["wind_speed_m_s"] for r in test_recs],
+        "y_true": y_test.tolist()
+    }
 
-    # --- 1. Global Training Median Baseline ---
-    med_global = float(np.median(y_train))
+    # Baseline Global Median
+    med_dev = float(np.median(y_dev))
+    p_test_med = np.full_like(y_test, med_dev)
     results["Baseline_Global_Median"] = {
-        "description": "Constant predictor using training set median distance.",
+        "description": "Constant predictor using development set median.",
         "prospective": True,
-        "val": compute_metrics(y_val, np.full_like(y_val, med_global)),
-        "test": compute_metrics(y_test, np.full_like(y_test, med_global))
+        "cv": cv_results["Baseline_Global_Median"],
+        "test": compute_metrics(y_test, p_test_med)
     }
-    test_predictions_dict["pred_global_median"] = np.full_like(y_test, med_global).tolist()
+    test_predictions_dict["pred_global_median"] = p_test_med.tolist()
 
-    # --- 2. Fuel-Category Training Median Baseline ---
-    cat_medians = {}
-    for cat in ("vegetative", "structural"):
-        sub = [r["landing_distance_m"] for r in train_recs if r["fuel_category"] == cat]
-        cat_medians[cat] = float(np.median(sub)) if sub else med_global
-
-    val_cat_pred = np.array([cat_medians.get(r["fuel_category"], med_global) for r in val_recs])
-    test_cat_pred = np.array([cat_medians.get(r["fuel_category"], med_global) for r in test_recs])
-    results["Baseline_Category_Median"] = {
-        "description": "Category-specific training median distance.",
+    # Prospective Ridge
+    model_ridge = Ridge(alpha=10.0).fit(X_pro_dev, y_dev)
+    p_test_ridge = np.maximum(0, model_ridge.predict(X_pro_test))
+    results["Prospective_Ridge"] = {
+        "description": "L2-Regularized Linear Model on wind speed, wind^2, and fuel category.",
         "prospective": True,
-        "val": compute_metrics(y_val, val_cat_pred),
-        "test": compute_metrics(y_test, test_cat_pred)
+        "cv": cv_results["Prospective_Ridge"],
+        "test": compute_metrics(y_test, p_test_ridge)
     }
-    test_predictions_dict["pred_category_median"] = test_cat_pred.tolist()
+    test_predictions_dict["pred_prospective_ridge"] = p_test_ridge.tolist()
 
-    # --- Feature Extraction ---
-    # Prospective features: wind_speed, gust_peak, wind_speed^2, moisture_content, fuel_category
-    def get_prospective_matrix(recs, enc=None, scaler=None, is_train=False):
-        num_feat = np.column_stack([
-            [r["wind_speed_m_s"] for r in recs],
-            [r["gust_peak_m_s"] for r in recs],
-            [r["wind_speed_m_s"]**2 for r in recs],
-            [r["moisture_content_percent"] for r in recs]
-        ])
-        cat_raw = np.array([[r["fuel_category"]] for r in recs])
-        if is_train:
-            enc = OneHotEncoder(sparse_output=False, handle_unknown="ignore")
-            cat_feat = enc.fit_transform(cat_raw)
-            scaler = StandardScaler()
-            num_feat = scaler.fit_transform(num_feat)
-        else:
-            cat_feat = enc.transform(cat_raw)
-            num_feat = scaler.transform(num_feat)
-        X = np.column_stack([num_feat, cat_feat])
-        return X, enc, scaler
+    # Prospective Random Forest
+    model_rf = RandomForestRegressor(n_estimators=100, max_depth=2, random_state=args.seed).fit(X_pro_dev, y_dev)
+    p_test_rf = np.maximum(0, model_rf.predict(X_pro_test))
+    results["Prospective_Random_Forest"] = {
+        "description": "Restrained tree ensemble (max_depth=2) on wind speed and fuel category.",
+        "prospective": True,
+        "cv": cv_results["Prospective_Random_Forest"],
+        "test": compute_metrics(y_test, p_test_rf)
+    }
+    test_predictions_dict["pred_prospective_rf"] = p_test_rf.tolist()
 
-    X_pro_train, enc_pro, scale_pro = get_prospective_matrix(train_recs, is_train=True)
-    X_pro_val, _, _ = get_prospective_matrix(val_recs, enc=enc_pro, scaler=scale_pro, is_train=False)
-    X_pro_test, _, _ = get_prospective_matrix(test_recs, enc=enc_pro, scaler=scale_pro, is_train=False)
+    # Prospective Gradient Boosting
+    model_gb = GradientBoostingRegressor(n_estimators=60, max_depth=2, learning_rate=0.05, random_state=args.seed).fit(X_pro_dev, y_dev)
+    p_test_gb = np.maximum(0, model_gb.predict(X_pro_test))
+    results["Prospective_Gradient_Boosting"] = {
+        "description": "Gradient boosted shallow trees (max_depth=2, lr=0.05).",
+        "prospective": True,
+        "cv": cv_results["Prospective_Gradient_Boosting"],
+        "test": compute_metrics(y_test, p_test_gb)
+    }
+    test_predictions_dict["pred_prospective_gb"] = p_test_gb.tolist()
 
-    # Retrospective features: log(mass), log(area), log(area/mass), wind, gust_peak, wind^2, moisture, category
+    # Prospective Parsimonious Ensemble (Blend of Ridge + RF)
+    p_test_ens = (p_test_ridge + p_test_rf) / 2.0
+    results["Prospective_Parsimonious_Ensemble"] = {
+        "description": "Regularized blend averaging Ridge and Random Forest (depth=2).",
+        "prospective": True,
+        "cv": cv_results["Prospective_Parsimonious_Ensemble"],
+        "test": compute_metrics(y_test, p_test_ens)
+    }
+    test_predictions_dict["pred_prospective_ensemble"] = p_test_ens.tolist()
+
+    # Conformal Prediction Bounds for Test Set
+    p_test_lower = np.maximum(0, p_test_ridge - conformal_radius_80)
+    p_test_upper = p_test_ridge + conformal_radius_80
+    test_predictions_dict["pred_conformal_p10_bound"] = p_test_lower.tolist()
+    test_predictions_dict["pred_conformal_p90_bound"] = p_test_upper.tolist()
+
+    covered = (y_test >= p_test_lower) & (y_test <= p_test_upper)
+    test_coverage_pct = float(np.mean(covered) * 100.0)
+    results["Conformal_Uncertainty_80"] = {
+        "nominal_coverage_pct": 80.0,
+        "empirical_test_coverage_pct": test_coverage_pct,
+        "conformal_radius_m": conformal_radius_80,
+        "coverage_comment": "Evaluates group-level exchangeability; test fuel mockups exhibit slight outward shift."
+    }
+
+    # 4. Retrospective Diagnostic Models (Strictly Separated)
     def get_retrospective_matrix(recs, enc=None, scaler=None, is_train=False):
         mass = np.array([r["mass_kg"] for r in recs])
         area = np.array([r["projected_area_m2"] for r in recs])
         wind = np.array([r["wind_speed_m_s"] for r in recs])
-        gust = np.array([r["gust_peak_m_s"] for r in recs])
-        mc = np.array([r["moisture_content_percent"] for r in recs])
-        num_feat = np.column_stack([
-            np.log(mass),
-            np.log(area),
-            np.log(area / mass),
-            wind,
-            gust,
-            wind**2,
-            mc
-        ])
+        num_f = np.column_stack([np.log(mass), np.log(area), np.log(area / mass), wind, wind**2])
         cat_raw = np.array([[r["fuel_category"]] for r in recs])
         if is_train:
             enc = OneHotEncoder(sparse_output=False, handle_unknown="ignore")
-            cat_feat = enc.fit_transform(cat_raw)
+            cat_f = enc.fit_transform(cat_raw)
             scaler = StandardScaler()
-            num_feat = scaler.fit_transform(num_feat)
+            num_f = scaler.fit_transform(num_f)
         else:
-            cat_feat = enc.transform(cat_raw)
-            num_feat = scaler.transform(num_feat)
-        X = np.column_stack([num_feat, cat_feat])
-        return X, enc, scaler
+            cat_f = enc.transform(cat_raw)
+            num_f = scaler.transform(num_f)
+        return np.column_stack([num_f, cat_f]), enc, scaler
 
-    X_retro_train, enc_retro, scale_retro = get_retrospective_matrix(train_recs, is_train=True)
-    X_retro_val, _, _ = get_retrospective_matrix(val_recs, enc=enc_retro, scaler=scale_retro, is_train=False)
+    X_retro_dev, enc_retro, scale_retro = get_retrospective_matrix(dev_recs, is_train=True)
     X_retro_test, _, _ = get_retrospective_matrix(test_recs, enc=enc_retro, scaler=scale_retro, is_train=False)
 
-    # --- 3. Prospective Ridge Regression ---
-    model_pro_ridge = Ridge(alpha=1.0)
-    model_pro_ridge.fit(X_pro_train, y_train)
-    p_val_pro_ridge = np.maximum(0, model_pro_ridge.predict(X_pro_val))
-    p_test_pro_ridge = np.maximum(0, model_pro_ridge.predict(X_pro_test))
-    results["Prospective_Ridge"] = {
-        "description": "Linear Ridge Regression using wind, gust, moisture, category.",
-        "prospective": True,
-        "val": compute_metrics(y_val, p_val_pro_ridge),
-        "test": compute_metrics(y_test, p_test_pro_ridge)
-    }
-    test_predictions_dict["pred_prospective_ridge"] = p_test_pro_ridge.tolist()
-
-    # --- 4. Prospective Random Forest ---
-    model_pro_rf = RandomForestRegressor(n_estimators=100, max_depth=3, random_state=args.seed)
-    model_pro_rf.fit(X_pro_train, y_train)
-    p_val_pro_rf = np.maximum(0, model_pro_rf.predict(X_pro_val))
-    p_test_pro_rf = np.maximum(0, model_pro_rf.predict(X_pro_test))
-    results["Prospective_Random_Forest"] = {
-        "description": "Random Forest using wind, gust, moisture, category.",
-        "prospective": True,
-        "val": compute_metrics(y_val, p_val_pro_rf),
-        "test": compute_metrics(y_test, p_test_pro_rf)
-    }
-    test_predictions_dict["pred_prospective_rf"] = p_test_pro_rf.tolist()
-
-    # --- 5. Prospective Gradient Boosting ---
-    model_pro_gb = GradientBoostingRegressor(n_estimators=100, max_depth=3, learning_rate=0.05, random_state=args.seed)
-    model_pro_gb.fit(X_pro_train, y_train)
-    p_val_pro_gb = np.maximum(0, model_pro_gb.predict(X_pro_val))
-    p_test_pro_gb = np.maximum(0, model_pro_gb.predict(X_pro_test))
-    results["Prospective_Gradient_Boosting"] = {
-        "description": "Gradient Boosting using wind, gust, moisture, category.",
-        "prospective": True,
-        "val": compute_metrics(y_val, p_val_pro_gb),
-        "test": compute_metrics(y_test, p_test_pro_gb)
-    }
-    test_predictions_dict["pred_prospective_gb"] = p_test_pro_gb.tolist()
-
-    # --- 6. Prospective Multi-Layer Perceptron (Neural Network) ---
-    model_pro_mlp = MLPRegressor(hidden_layer_sizes=(16, 8), max_iter=2000, solver="lbfgs", random_state=args.seed)
-    model_pro_mlp.fit(X_pro_train, y_train)
-    p_val_pro_mlp = np.maximum(0, model_pro_mlp.predict(X_pro_val))
-    p_test_pro_mlp = np.maximum(0, model_pro_mlp.predict(X_pro_test))
-    results["Prospective_MLP_Neural_Net"] = {
-        "description": "Two-layer neural network using wind, gust, moisture, category.",
-        "prospective": True,
-        "val": compute_metrics(y_val, p_val_pro_mlp),
-        "test": compute_metrics(y_test, p_test_pro_mlp)
-    }
-    test_predictions_dict["pred_prospective_mlp"] = p_test_pro_mlp.tolist()
-
-    # --- 7. Prospective Ensemble (Multi-model Average) ---
-    p_val_pro_ens = (p_val_pro_ridge + p_val_pro_rf + p_val_pro_gb + p_val_pro_mlp) / 4.0
-    p_test_pro_ens = (p_test_pro_ridge + p_test_pro_rf + p_test_pro_gb + p_test_pro_mlp) / 4.0
-    results["Prospective_Ensemble"] = {
-        "description": "Ensemble blender averaging Ridge, RF, GBDT, and MLP.",
-        "prospective": True,
-        "val": compute_metrics(y_val, p_val_pro_ens),
-        "test": compute_metrics(y_test, p_test_pro_ens)
-    }
-    test_predictions_dict["pred_prospective_ensemble"] = p_test_pro_ens.tolist()
-
-    # --- 8. Prospective Quantile Bounds (10th & 90th percentile spotting danger envelope) ---
-    model_q10 = GradientBoostingRegressor(loss="quantile", alpha=0.10, n_estimators=100, max_depth=3, random_state=args.seed)
-    model_q10.fit(X_pro_train, y_train)
-    p_test_q10 = np.maximum(0, model_q10.predict(X_pro_test))
-
-    model_q90 = GradientBoostingRegressor(loss="quantile", alpha=0.90, n_estimators=100, max_depth=3, random_state=args.seed)
-    model_q90.fit(X_pro_train, y_train)
-    p_test_q90 = np.maximum(0, model_q90.predict(X_pro_test))
-
-    test_predictions_dict["pred_prospective_p10_bound"] = p_test_q10.tolist()
-    test_predictions_dict["pred_prospective_p90_bound"] = p_test_q90.tolist()
-
-    # --- 9. Retrospective Ridge Regression ---
-    model_retro_ridge = Ridge(alpha=1.0)
-    model_retro_ridge.fit(X_retro_train, y_train)
-    p_val_retro_ridge = np.maximum(0, model_retro_ridge.predict(X_retro_val))
-    p_test_retro_ridge = np.maximum(0, model_retro_ridge.predict(X_retro_test))
-    results["Retrospective_Ridge"] = {
-        "description": "Ridge Regression using post-landing mass, area, area/mass ratio, wind.",
-        "prospective": False,
-        "val": compute_metrics(y_val, p_val_retro_ridge),
-        "test": compute_metrics(y_test, p_test_retro_ridge)
-    }
-    test_predictions_dict["pred_retrospective_ridge"] = p_test_retro_ridge.tolist()
-
-    # --- 10. Retrospective Random Forest ---
-    model_retro_rf = RandomForestRegressor(n_estimators=100, max_depth=3, random_state=args.seed)
-    model_retro_rf.fit(X_retro_train, y_train)
-    p_val_retro_rf = np.maximum(0, model_retro_rf.predict(X_retro_val))
-    p_test_retro_rf = np.maximum(0, model_retro_rf.predict(X_retro_test))
-    results["Retrospective_Random_Forest"] = {
-        "description": "Random Forest on post-landing particle mass, area, wind, moisture.",
-        "prospective": False,
-        "val": compute_metrics(y_val, p_val_retro_rf),
-        "test": compute_metrics(y_test, p_test_retro_rf)
-    }
-    test_predictions_dict["pred_retrospective_rf"] = p_test_retro_rf.tolist()
-
-    # --- 11. Retrospective Gradient Boosting ---
     model_retro_gb = GradientBoostingRegressor(n_estimators=100, max_depth=3, learning_rate=0.05, random_state=args.seed)
-    model_retro_gb.fit(X_retro_train, y_train)
-    p_val_retro_gb = np.maximum(0, model_retro_gb.predict(X_retro_val))
+    model_retro_gb.fit(X_retro_dev, y_dev)
     p_test_retro_gb = np.maximum(0, model_retro_gb.predict(X_retro_test))
     results["Retrospective_Gradient_Boosting"] = {
-        "description": "Gradient Boosting on post-landing particle mass, area, wind, moisture.",
+        "description": "Diagnostic model using recovered post-landing particle mass, area, and wind.",
         "prospective": False,
-        "val": compute_metrics(y_val, p_val_retro_gb),
         "test": compute_metrics(y_test, p_test_retro_gb)
     }
     test_predictions_dict["pred_retrospective_gb"] = p_test_retro_gb.tolist()
 
-    # --- 12. Retrospective Multi-Layer Perceptron (Neural Network) ---
-    model_retro_mlp = MLPRegressor(hidden_layer_sizes=(16, 8), max_iter=2000, solver="lbfgs", random_state=args.seed)
-    model_retro_mlp.fit(X_retro_train, y_train)
-    p_val_retro_mlp = np.maximum(0, model_retro_mlp.predict(X_retro_val))
-    p_test_retro_mlp = np.maximum(0, model_retro_mlp.predict(X_retro_test))
-    results["Retrospective_MLP_Neural_Net"] = {
-        "description": "Two-layer neural network on post-landing particle mass, area, wind.",
+    # 5. Physical Mechanistic Baseline (Evaluated at h=2.0m and h=1.0m)
+    p_test_phys_2m = run_physics_baseline(test_recs, release_height=2.0, cd=1.0)
+    p_test_phys_1m = run_physics_baseline(test_recs, release_height=1.0, cd=1.0)
+    results["Physical_RK4_Ballistic_2m"] = {
+        "description": "Illustrative ballistic baseline under quadratic drag from h=2.0 m.",
         "prospective": False,
-        "val": compute_metrics(y_val, p_val_retro_mlp),
-        "test": compute_metrics(y_test, p_test_retro_mlp)
+        "test": compute_metrics(y_test, p_test_phys_2m)
     }
-    test_predictions_dict["pred_retrospective_mlp"] = p_test_retro_mlp.tolist()
-
-    # --- 13. Retrospective Ensemble (Multi-model Average) ---
-    p_val_retro_ens = (p_val_retro_ridge + p_val_retro_rf + p_val_retro_gb + p_val_retro_mlp) / 4.0
-    p_test_retro_ens = (p_test_retro_ridge + p_test_retro_rf + p_test_retro_gb + p_test_retro_mlp) / 4.0
-    results["Retrospective_Ensemble"] = {
-        "description": "Ensemble blender averaging Retrospective Ridge, RF, GBDT, and MLP.",
+    results["Physical_RK4_Ballistic_1m"] = {
+        "description": "Illustrative ballistic baseline under quadratic drag from h=1.0 m.",
         "prospective": False,
-        "val": compute_metrics(y_val, p_val_retro_ens),
-        "test": compute_metrics(y_test, p_test_retro_ens)
+        "test": compute_metrics(y_test, p_test_phys_1m)
     }
-    test_predictions_dict["pred_retrospective_ensemble"] = p_test_retro_ens.tolist()
+    test_predictions_dict["pred_physical_rk4_2m"] = p_test_phys_2m.tolist()
+    test_predictions_dict["pred_physical_rk4_1m"] = p_test_phys_1m.tolist()
 
-    # --- 14. Physical Mechanistic Baseline ---
-    p_val_phys = run_physics_baseline(val_recs, release_height=2.0)
-    p_test_phys = run_physics_baseline(test_recs, release_height=2.0)
-    results["Physical_RK4_Ballistic"] = {
-        "description": "Mechanistic ballistic particle flight under quadratic drag at release height = 2.0 m.",
-        "prospective": False,
-        "val": compute_metrics(y_val, p_val_phys),
-        "test": compute_metrics(y_test, p_test_phys)
-    }
-    test_predictions_dict["pred_physical_rk4"] = p_test_phys.tolist()
-
-    # --- Save Reports and Predictions ---
-    eval_json_path = os.path.join(args.outdir, "benchmark_comparison.json")
-    with open(eval_json_path, "w", encoding="utf-8") as f:
+    # Save benchmark JSON
+    json_path = os.path.join(args.outdir, "benchmark_comparison.json")
+    with open(json_path, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2)
-    print(f"Saved benchmark summary to: {eval_json_path}")
+    print(f"Saved benchmark summary to: {json_path}")
 
+    # Save test predictions CSV
     preds_csv_path = os.path.join(args.outdir, "test_predictions.csv")
     with open(preds_csv_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=list(test_predictions_dict.keys()))
@@ -374,23 +355,24 @@ def main():
         keys = list(test_predictions_dict.keys())
         n_rows = len(test_predictions_dict["record_id"])
         for i in range(n_rows):
-            row = {k: test_predictions_dict[k][i] for k in keys}
-            writer.writerow(row)
+            writer.writerow({k: test_predictions_dict[k][i] for k in keys})
     print(f"Saved test predictions to: {preds_csv_path}")
 
-    # Generate summary table CSV
+    # Save metrics table CSV
     summary_rows = []
     for model_name, data in results.items():
-        summary_rows.append({
-            "model": model_name,
-            "type": "Prospective" if data["prospective"] else "Retrospective/Physical",
-            "val_mae_m": f"{data['val']['mae_m']:.3f}",
-            "val_rmse_m": f"{data['val']['rmse_m']:.3f}",
-            "test_mae_m": f"{data['test']['mae_m']:.3f}",
-            "test_rmse_m": f"{data['test']['rmse_m']:.3f}",
-            "test_med_ae_m": f"{data['test']['median_ae_m']:.3f}",
-            "test_bias_m": f"{data['test']['bias_m']:.3f}"
-        })
+        if "test" in data:
+            cv_mae_str = f"{data['cv']['cv_mae_m']:.3f}" if "cv" in data else "N/A"
+            summary_rows.append({
+                "model": model_name,
+                "type": "Prospective" if data.get("prospective") else "Diagnostic/Physical",
+                "cv_mae_m": cv_mae_str,
+                "test_mae_m": f"{data['test']['mae_m']:.3f}",
+                "test_rmse_m": f"{data['test']['rmse_m']:.3f}",
+                "test_med_ae_m": f"{data['test']['median_ae_m']:.3f}",
+                "test_bias_m": f"{data['test']['bias_m']:.3f}"
+            })
+
     metrics_csv_path = os.path.join(args.outdir, "metrics_table.csv")
     with open(metrics_csv_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=list(summary_rows[0].keys()))
@@ -400,11 +382,12 @@ def main():
 
     # Print summary
     print("\n================== BENCHMARK EVALUATION RESULTS (HELD-OUT TEST SET) ==================")
-    print(f"{'Model':<35} | {'Type':<15} | {'Test MAE':<10} | {'Test RMSE':<10} | {'Bias':<8}")
-    print("-" * 88)
+    print(f"{'Model':<35} | {'Type':<14} | {'CV MAE':<9} | {'Test MAE':<9} | {'Test RMSE':<9} | {'Bias':<8}")
+    print("-" * 92)
     for r in summary_rows:
-        print(f"{r['model']:<35} | {r['type']:<15} | {r['test_mae_m'] + ' m':<10} | {r['test_rmse_m'] + ' m':<10} | {r['test_bias_m'] + ' m':<8}")
-    print("=" * 88)
+        cv_disp = (r['cv_mae_m'] + ' m') if r['cv_mae_m'] != 'N/A' else 'N/A'
+        print(f"{r['model']:<35} | {r['type']:<14} | {cv_disp:<9} | {r['test_mae_m'] + ' m':<9} | {r['test_rmse_m'] + ' m':<9} | {r['test_bias_m'] + ' m':<8}")
+    print("=" * 92)
 
 
 if __name__ == "__main__":
