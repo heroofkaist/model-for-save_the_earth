@@ -77,3 +77,4 @@ class ExperimentalDistanceNet(nn.Module):
         q90 = q50 + delta_high
         
         return torch.cat([q10, q50, q90], dim=-1)
+
