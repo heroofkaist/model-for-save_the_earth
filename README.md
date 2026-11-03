@@ -50,9 +50,21 @@ Model Predictions for Experimental Landing Distance:
 
 ---
 
-## 🔬 Scientific Architecture & Benchmarking Results
+## 🔬 Scientific Architecture & Levels of Evidence
 
-### 1. Six Distinct Research Targets
+### 1. Rigorous Separation of the Four Levels of Evidence
+To ensure absolute scientific honesty and avoid overclaiming, this repository strictly distinguishes between four levels of scientific proof:
+
+| Evidence Level | Evidence Source | What It Scientifically Validates | What It Does NOT Validate |
+|---|---|---|---|
+| **Level 1: Numerical Surrogate Capacity** | 10,000 in-silico RK4 trajectory simulations | Verifies that deep neural networks (Models B & C) can learn to approximate a non-linear ODE aerodynamic solver | Does NOT validate against nature or real physical firebrands |
+| **Level 2: Joint Distribution Consistency** | 60,370 moment-matched Gaussian-copula particles | Tests model consistency against reconstructed multivariate empirical distributions from USDA JFSP 15-1-04-4 | Are NOT raw individual experimental sensor catch logs |
+| **Level 3: Operational Deposition Validation** | 69 full-scale wind-tunnel burn series (IBHS/USDA) | Validates prospective and diagnostic models against published aggregate physical deposition distances | Does NOT provide time-resolved 3D in-flight coordinates |
+| **Level 4: Photogrammetric Spatial Kinematics** | OpenPTV 2-camera stereoscopic tracking | Validates near-field spatial displacement geometry ($\overline{\Delta x} \approx 4.2$ mm/frame) | Does NOT validate velocity dynamics (camera FPS unconfirmed) |
+
+> ⚠️ **Scientific Classification:** Models B, C, and E are **exploratory computational research prototypes**, not operationally deployed wildfire tools. We make no claim of "experimentally validated full 3D trajectory prediction" without verified in-flight time series.
+
+### 2. Six Distinct Research Targets
 The framework strictly separates six distinct physical processes to avoid confounding:
 1. **Firebrand Generation** (`src/save_the_earth/interfaces/generation.py`)
 2. **Atmospheric Transport** (`src/save_the_earth/interfaces/transport.py`)
@@ -63,7 +75,7 @@ The framework strictly separates six distinct physical processes to avoid confou
 
 > ⚠️ **Core Rule:** Never confuse an ember landing with a spot fire ignition. Spot fires represent successful ignitions conditional on fuel receptivity; wind-tunnel water pans measure mechanical transport.
 
-### 2. Evaluated Performance on 5-Fold Group CV & Frozen Test Partition (`data/manifests/split_v1.csv`)
+### 3. Evaluated Performance on 5-Fold Group CV & Frozen Test Partition (`data/manifests/split_v1.csv`)
 Models evaluated across 20 development groups and tested on 3 untouched, independent fuel groups (`mockup_fibercement_combustible`, `mockup_wood_noncombustible_roof`, `corner_osb_osb`):
 
 | Model Name | Configuration | 5-Fold Group CV MAE | Test MAE | Test RMSE | Median AE | Signed Bias |
@@ -97,7 +109,7 @@ In addition to run-level median benchmarks, models are evaluated against an **8,
 | **Physics-Informed Hybrid** | Model C: Hybrid Surrogate (Fixed) | 6.302 | 8.262 | 5.055 | +1.453 | > 950,000 |
 | *Theoretical Reference* | *Oracle Constant Predictor (Median)* | *4.800* | *7.230* | *2.300* | *0.000* | *N/A* |
 
-*Note: In the test set, the empirical landing distance standard deviation is $\sigma = 7.23$ m, meaning single-point particle predictions hit an irreducible physical scatter floor around ~4.8 m MAE. In contrast, for operational wildfire spotting, the relevant metric is the **expected deposition median distance**, where our models achieve **1.57 m to 1.73 m MAE**.*
+*Note: In the test set, the empirical landing distance standard deviation is $\sigma = 7.23$ m, and a simple constant median predictor achieves an MAE of 4.80 m on this scatter. Conditional models with informative features can narrow this interval, but individual particle trajectories in turbulent flow require probabilistic interval prediction ($q_{10}-q_{90}$) rather than deterministic point estimates.*
 
 * **Comprehensive Acquisition Audit:** See [`reports/REAL_DATA_ACQUISITION.md`](file:///Users/heroofhumanity/Projects%20VS%20code/model%20for%20save_the_earth/reports/REAL_DATA_ACQUISITION.md).
 * **Validation Methodology & Physical Analysis:** See [`reports/INDEPENDENT_MODEL_VALIDATION.md`](file:///Users/heroofhumanity/Projects%20VS%20code/model%20for%20save_the_earth/reports/INDEPENDENT_MODEL_VALIDATION.md).
@@ -159,7 +171,7 @@ In addition to run-level median benchmarks, models are evaluated against an **8,
 │   ├── dataset_card.md              # Dataset card detailing provenance & measurements
 │   ├── model_card.md                # Model card detailing feature scope & limitations
 │   └── figures/                     # Diagnostic figures (dispersion, model comparisons, wind trends)
-└── tests/                           # 39 automated unit and integrity tests
+└── tests/                           # 45 automated unit and integrity tests
 ```
 
 ---
@@ -169,4 +181,4 @@ Run the complete unit test suite with:
 ```bash
 python3 -m unittest discover -s tests -v
 ```
-All 39 unit tests verify group leakage prevention, physical conservation laws, domain interface schemas, frozen checkpoint integrity, OpenPTV track reconstruction, and particle benchmark consistency without error.
+All 45 unit tests verify group leakage prevention, physical conservation laws, domain interface schemas, frozen checkpoint integrity, OpenPTV track reconstruction, and particle benchmark consistency without error.

@@ -1,0 +1,437 @@
+{
+  "title": "Systematic Physical Ablation Study: Firebrand Aerodynamics & Combustion",
+  "description": "Quantifies the trajectory shift produced by Tohidi lift, Wong micro-plume buoyancy, and Albini mass/area shrinkage.",
+  "aggregate_impact_relative_to_baseline": {
+    "Config 2: + Tohidi Drag & Lift": {
+      "mean_landing_distance_shift_pct": 7.4,
+      "max_landing_distance_shift_pct": 22.65,
+      "mean_flight_time_shift_pct": 9.26
+    },
+    "Config 3: + Wong Combustion Buoyancy": {
+      "mean_landing_distance_shift_pct": 19.46,
+      "max_landing_distance_shift_pct": 35.64,
+      "mean_flight_time_shift_pct": 19.89
+    },
+    "Config 4: + Albini Mass & Area Loss (Full)": {
+      "mean_landing_distance_shift_pct": 19.73,
+      "max_landing_distance_shift_pct": 35.98,
+      "mean_flight_time_shift_pct": 20.16
+    }
+  },
+  "detailed_scenarios": {
+    "Flat Bark Flake (Slender)": {
+      "h_1.22m": {
+        "u_5.36mps": {
+          "Config 1: Baseline Drag Only": {
+            "landing_distance_m": 2.974,
+            "flight_time_s": 1.019,
+            "impact_vz_m_s": -1.246
+          },
+          "Config 2: + Tohidi Drag & Lift": {
+            "landing_distance_m": 3.441,
+            "flight_time_s": 1.158,
+            "impact_vz_m_s": -0.98
+          },
+          "Config 3: + Wong Combustion Buoyancy": {
+            "landing_distance_m": 3.777,
+            "flight_time_s": 1.266,
+            "impact_vz_m_s": -0.866
+          },
+          "Config 4: + Albini Mass & Area Loss (Full)": {
+            "landing_distance_m": 3.786,
+            "flight_time_s": 1.269,
+            "impact_vz_m_s": -0.858
+          }
+        },
+        "u_11.17mps": {
+          "Config 1: Baseline Drag Only": {
+            "landing_distance_m": 6.656,
+            "flight_time_s": 1.052,
+            "impact_vz_m_s": -0.992
+          },
+          "Config 2: + Tohidi Drag & Lift": {
+            "landing_distance_m": 7.885,
+            "flight_time_s": 1.244,
+            "impact_vz_m_s": -0.509
+          },
+          "Config 3: + Wong Combustion Buoyancy": {
+            "landing_distance_m": 8.672,
+            "flight_time_s": 1.369,
+            "impact_vz_m_s": -0.414
+          },
+          "Config 4: + Albini Mass & Area Loss (Full)": {
+            "landing_distance_m": 8.694,
+            "flight_time_s": 1.373,
+            "impact_vz_m_s": -0.409
+          }
+        },
+        "u_17.88mps": {
+          "Config 1: Baseline Drag Only": {
+            "landing_distance_m": 11.173,
+            "flight_time_s": 1.094,
+            "impact_vz_m_s": -0.769
+          },
+          "Config 2: + Tohidi Drag & Lift": {
+            "landing_distance_m": 13.704,
+            "flight_time_s": 1.379,
+            "impact_vz_m_s": -0.24
+          },
+          "Config 3: + Wong Combustion Buoyancy": {
+            "landing_distance_m": 15.155,
+            "flight_time_s": 1.536,
+            "impact_vz_m_s": -0.196
+          },
+          "Config 4: + Albini Mass & Area Loss (Full)": {
+            "landing_distance_m": 15.193,
+            "flight_time_s": 1.541,
+            "impact_vz_m_s": -0.194
+          }
+        }
+      },
+      "h_2.00m": {
+        "u_5.36mps": {
+          "Config 1: Baseline Drag Only": {
+            "landing_distance_m": 5.294,
+            "flight_time_s": 1.585,
+            "impact_vz_m_s": -1.245
+          },
+          "Config 2: + Tohidi Drag & Lift": {
+            "landing_distance_m": 5.976,
+            "flight_time_s": 1.776,
+            "impact_vz_m_s": -0.98
+          },
+          "Config 3: + Wong Combustion Buoyancy": {
+            "landing_distance_m": 6.536,
+            "flight_time_s": 1.937,
+            "impact_vz_m_s": -0.866
+          },
+          "Config 4: + Albini Mass & Area Loss (Full)": {
+            "landing_distance_m": 6.561,
+            "flight_time_s": 1.946,
+            "impact_vz_m_s": -0.854
+          }
+        },
+        "u_11.17mps": {
+          "Config 1: Baseline Drag Only": {
+            "landing_distance_m": 11.544,
+            "flight_time_s": 1.622,
+            "impact_vz_m_s": -0.992
+          },
+          "Config 2: + Tohidi Drag & Lift": {
+            "landing_distance_m": 13.27,
+            "flight_time_s": 1.87,
+            "impact_vz_m_s": -0.508
+          },
+          "Config 3: + Wong Combustion Buoyancy": {
+            "landing_distance_m": 14.539,
+            "flight_time_s": 2.052,
+            "impact_vz_m_s": -0.414
+          },
+          "Config 4: + Albini Mass & Area Loss (Full)": {
+            "landing_distance_m": 14.597,
+            "flight_time_s": 2.062,
+            "impact_vz_m_s": -0.406
+          }
+        },
+        "u_17.88mps": {
+          "Config 1: Baseline Drag Only": {
+            "landing_distance_m": 19.081,
+            "flight_time_s": 1.671,
+            "impact_vz_m_s": -0.77
+          },
+          "Config 2: + Tohidi Drag & Lift": {
+            "landing_distance_m": 22.509,
+            "flight_time_s": 2.02,
+            "impact_vz_m_s": -0.239
+          },
+          "Config 3: + Wong Combustion Buoyancy": {
+            "landing_distance_m": 24.767,
+            "flight_time_s": 2.236,
+            "impact_vz_m_s": -0.196
+          },
+          "Config 4: + Albini Mass & Area Loss (Full)": {
+            "landing_distance_m": 24.864,
+            "flight_time_s": 2.248,
+            "impact_vz_m_s": -0.193
+          }
+        }
+      }
+    },
+    "Cylindrical Rod / Twig": {
+      "h_1.22m": {
+        "u_5.36mps": {
+          "Config 1: Baseline Drag Only": {
+            "landing_distance_m": 1.524,
+            "flight_time_s": 0.689,
+            "impact_vz_m_s": -2.477
+          },
+          "Config 2: + Tohidi Drag & Lift": {
+            "landing_distance_m": 1.592,
+            "flight_time_s": 0.723,
+            "impact_vz_m_s": -2.471
+          },
+          "Config 3: + Wong Combustion Buoyancy": {
+            "landing_distance_m": 1.788,
+            "flight_time_s": 0.793,
+            "impact_vz_m_s": -2.257
+          },
+          "Config 4: + Albini Mass & Area Loss (Full)": {
+            "landing_distance_m": 1.791,
+            "flight_time_s": 0.794,
+            "impact_vz_m_s": -2.249
+          }
+        },
+        "u_11.17mps": {
+          "Config 1: Baseline Drag Only": {
+            "landing_distance_m": 3.882,
+            "flight_time_s": 0.713,
+            "impact_vz_m_s": -2.279
+          },
+          "Config 2: + Tohidi Drag & Lift": {
+            "landing_distance_m": 4.395,
+            "flight_time_s": 0.793,
+            "impact_vz_m_s": -2.141
+          },
+          "Config 3: + Wong Combustion Buoyancy": {
+            "landing_distance_m": 4.898,
+            "flight_time_s": 0.869,
+            "impact_vz_m_s": -1.907
+          },
+          "Config 4: + Albini Mass & Area Loss (Full)": {
+            "landing_distance_m": 4.906,
+            "flight_time_s": 0.87,
+            "impact_vz_m_s": -1.897
+          }
+        },
+        "u_17.88mps": {
+          "Config 1: Baseline Drag Only": {
+            "landing_distance_m": 6.901,
+            "flight_time_s": 0.732,
+            "impact_vz_m_s": -1.98
+          },
+          "Config 2: + Tohidi Drag & Lift": {
+            "landing_distance_m": 8.027,
+            "flight_time_s": 0.834,
+            "impact_vz_m_s": -1.628
+          },
+          "Config 3: + Wong Combustion Buoyancy": {
+            "landing_distance_m": 8.904,
+            "flight_time_s": 0.915,
+            "impact_vz_m_s": -1.389
+          },
+          "Config 4: + Albini Mass & Area Loss (Full)": {
+            "landing_distance_m": 8.917,
+            "flight_time_s": 0.917,
+            "impact_vz_m_s": -1.377
+          }
+        }
+      },
+      "h_2.00m": {
+        "u_5.36mps": {
+          "Config 1: Baseline Drag Only": {
+            "landing_distance_m": 2.813,
+            "flight_time_s": 1.0,
+            "impact_vz_m_s": -2.487
+          },
+          "Config 2: + Tohidi Drag & Lift": {
+            "landing_distance_m": 2.9,
+            "flight_time_s": 1.037,
+            "impact_vz_m_s": -2.468
+          },
+          "Config 3: + Wong Combustion Buoyancy": {
+            "landing_distance_m": 3.225,
+            "flight_time_s": 1.135,
+            "impact_vz_m_s": -2.248
+          },
+          "Config 4: + Albini Mass & Area Loss (Full)": {
+            "landing_distance_m": 3.233,
+            "flight_time_s": 1.137,
+            "impact_vz_m_s": -2.235
+          }
+        },
+        "u_11.17mps": {
+          "Config 1: Baseline Drag Only": {
+            "landing_distance_m": 6.727,
+            "flight_time_s": 1.03,
+            "impact_vz_m_s": -2.237
+          },
+          "Config 2: + Tohidi Drag & Lift": {
+            "landing_distance_m": 7.345,
+            "flight_time_s": 1.115,
+            "impact_vz_m_s": -2.053
+          },
+          "Config 3: + Wong Combustion Buoyancy": {
+            "landing_distance_m": 8.126,
+            "flight_time_s": 1.22,
+            "impact_vz_m_s": -1.814
+          },
+          "Config 4: + Albini Mass & Area Loss (Full)": {
+            "landing_distance_m": 8.145,
+            "flight_time_s": 1.223,
+            "impact_vz_m_s": -1.797
+          }
+        },
+        "u_17.88mps": {
+          "Config 1: Baseline Drag Only": {
+            "landing_distance_m": 11.614,
+            "flight_time_s": 1.056,
+            "impact_vz_m_s": -1.898
+          },
+          "Config 2: + Tohidi Drag & Lift": {
+            "landing_distance_m": 12.969,
+            "flight_time_s": 1.168,
+            "impact_vz_m_s": -1.48
+          },
+          "Config 3: + Wong Combustion Buoyancy": {
+            "landing_distance_m": 14.326,
+            "flight_time_s": 1.282,
+            "impact_vz_m_s": -1.248
+          },
+          "Config 4: + Albini Mass & Area Loss (Full)": {
+            "landing_distance_m": 14.361,
+            "flight_time_s": 1.286,
+            "impact_vz_m_s": -1.232
+          }
+        }
+      }
+    },
+    "Compact Wood Chunk": {
+      "h_1.22m": {
+        "u_5.36mps": {
+          "Config 1: Baseline Drag Only": {
+            "landing_distance_m": 0.831,
+            "flight_time_s": 0.59,
+            "impact_vz_m_s": -3.446
+          },
+          "Config 2: + Tohidi Drag & Lift": {
+            "landing_distance_m": 0.747,
+            "flight_time_s": 0.586,
+            "impact_vz_m_s": -3.573
+          },
+          "Config 3: + Wong Combustion Buoyancy": {
+            "landing_distance_m": 0.85,
+            "flight_time_s": 0.64,
+            "impact_vz_m_s": -3.281
+          },
+          "Config 4: + Albini Mass & Area Loss (Full)": {
+            "landing_distance_m": 0.851,
+            "flight_time_s": 0.64,
+            "impact_vz_m_s": -3.277
+          }
+        },
+        "u_11.17mps": {
+          "Config 1: Baseline Drag Only": {
+            "landing_distance_m": 2.463,
+            "flight_time_s": 0.615,
+            "impact_vz_m_s": -3.356
+          },
+          "Config 2: + Tohidi Drag & Lift": {
+            "landing_distance_m": 2.354,
+            "flight_time_s": 0.625,
+            "impact_vz_m_s": -3.472
+          },
+          "Config 3: + Wong Combustion Buoyancy": {
+            "landing_distance_m": 2.676,
+            "flight_time_s": 0.685,
+            "impact_vz_m_s": -3.181
+          },
+          "Config 4: + Albini Mass & Area Loss (Full)": {
+            "landing_distance_m": 2.679,
+            "flight_time_s": 0.685,
+            "impact_vz_m_s": -3.176
+          }
+        },
+        "u_17.88mps": {
+          "Config 1: Baseline Drag Only": {
+            "landing_distance_m": 4.773,
+            "flight_time_s": 0.632,
+            "impact_vz_m_s": -3.224
+          },
+          "Config 2: + Tohidi Drag & Lift": {
+            "landing_distance_m": 4.822,
+            "flight_time_s": 0.661,
+            "impact_vz_m_s": -3.343
+          },
+          "Config 3: + Wong Combustion Buoyancy": {
+            "landing_distance_m": 5.455,
+            "flight_time_s": 0.725,
+            "impact_vz_m_s": -3.044
+          },
+          "Config 4: + Albini Mass & Area Loss (Full)": {
+            "landing_distance_m": 5.461,
+            "flight_time_s": 0.726,
+            "impact_vz_m_s": -3.038
+          }
+        }
+      },
+      "h_2.00m": {
+        "u_5.36mps": {
+          "Config 1: Baseline Drag Only": {
+            "landing_distance_m": 1.598,
+            "flight_time_s": 0.81,
+            "impact_vz_m_s": -3.763
+          },
+          "Config 2: + Tohidi Drag & Lift": {
+            "landing_distance_m": 1.445,
+            "flight_time_s": 0.799,
+            "impact_vz_m_s": -3.97
+          },
+          "Config 3: + Wong Combustion Buoyancy": {
+            "landing_distance_m": 1.628,
+            "flight_time_s": 0.872,
+            "impact_vz_m_s": -3.647
+          },
+          "Config 4: + Albini Mass & Area Loss (Full)": {
+            "landing_distance_m": 1.632,
+            "flight_time_s": 0.873,
+            "impact_vz_m_s": -3.637
+          }
+        },
+        "u_11.17mps": {
+          "Config 1: Baseline Drag Only": {
+            "landing_distance_m": 4.361,
+            "flight_time_s": 0.841,
+            "impact_vz_m_s": -3.647
+          },
+          "Config 2: + Tohidi Drag & Lift": {
+            "landing_distance_m": 4.171,
+            "flight_time_s": 0.847,
+            "impact_vz_m_s": -3.849
+          },
+          "Config 3: + Wong Combustion Buoyancy": {
+            "landing_distance_m": 4.693,
+            "flight_time_s": 0.927,
+            "impact_vz_m_s": -3.521
+          },
+          "Config 4: + Albini Mass & Area Loss (Full)": {
+            "landing_distance_m": 4.701,
+            "flight_time_s": 0.928,
+            "impact_vz_m_s": -3.509
+          }
+        },
+        "u_17.88mps": {
+          "Config 1: Baseline Drag Only": {
+            "landing_distance_m": 8.077,
+            "flight_time_s": 0.862,
+            "impact_vz_m_s": -3.441
+          },
+          "Config 2: + Tohidi Drag & Lift": {
+            "landing_distance_m": 8.081,
+            "flight_time_s": 0.888,
+            "impact_vz_m_s": -3.64
+          },
+          "Config 3: + Wong Combustion Buoyancy": {
+            "landing_distance_m": 9.056,
+            "flight_time_s": 0.973,
+            "impact_vz_m_s": -3.297
+          },
+          "Config 4: + Albini Mass & Area Loss (Full)": {
+            "landing_distance_m": 9.07,
+            "flight_time_s": 0.974,
+            "impact_vz_m_s": -3.284
+          }
+        }
+      }
+    }
+  }
+}
