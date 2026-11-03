@@ -65,7 +65,7 @@ def run_step(step_num, total_steps, title, command_args):
 
 def run_predict(wind, category, moisture=None):
     import numpy as np
-    from sklearn.linear_model import Ridge
+    from sklearn.linear_model import Ridge, HuberRegressor
     from sklearn.ensemble import RandomForestRegressor
     from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
@@ -110,11 +110,41 @@ def run_predict(wind, category, moisture=None):
 
     # Models
     ridge = Ridge(alpha=10.0).fit(X_dev, y_dev)
+    huber = HuberRegressor(alpha=1.0, epsilon=1.35).fit(X_dev, y_dev)
     rf = RandomForestRegressor(n_estimators=100, max_depth=2, random_state=42).fit(X_dev, y_dev)
 
     p_ridge = float(np.maximum(0, ridge.predict(query_X)[0]))
+    p_huber = float(np.maximum(0, huber.predict(query_X)[0]))
     p_rf = float(np.maximum(0, rf.predict(query_X)[0]))
     p_ens = (p_ridge + p_rf) / 2.0
+
+    # Load Model E (Deep Experimental Neural Surrogate)
+    p_e_info = None
+    checkpoint_e_path = Path("checkpoints/best_experimental_model.pt")
+    if checkpoint_e_path.exists():
+        try:
+            import torch
+            from src.save_the_earth.models.experimental_surrogate import ExperimentalDistanceNet
+            chk_e = torch.load(checkpoint_e_path, map_location="cpu", weights_only=False)
+            m_e = ExperimentalDistanceNet(in_dim=10, hidden_dim=128, dropout=0.0)
+            m_e.load_state_dict(chk_e["model_state_dict"])
+            m_e.eval()
+
+            u = wind
+            gust = wind
+            moist = moisture if moisture is not None else 10.0
+            is_struct = 1.0 if category == "structural" else 0.0
+            m = 5e-5
+            a = 2e-4
+            am = a / m
+            dryness = np.exp(-moist / 20.0)
+            raw_feat = np.array([[u, u**2, gust, moist, dryness, is_struct, np.log(m), np.log(a), np.log(am), u**2 * dryness]], dtype=np.float32)
+            norm_feat = (raw_feat - chk_e["mean_x"]) / chk_e["std_x"]
+            with torch.no_grad():
+                preds_e = m_e(torch.from_numpy(norm_feat)).numpy()[0]
+            p_e_info = (float(preds_e[0]), float(preds_e[1]), float(preds_e[2]))
+        except Exception:
+            p_e_info = None
 
     # Load conformal calibration radius
     bench_json = "distance_results/benchmark_comparison.json"
@@ -124,21 +154,24 @@ def run_predict(wind, category, moisture=None):
             b_data = json.load(f)
             conformal_radius = b_data.get("Conformal_Uncertainty_80", {}).get("conformal_radius_m", 1.575)
 
-    conf_lower = max(0.0, p_ridge - conformal_radius)
-    conf_upper = p_ridge + conformal_radius
+    conf_lower = max(0.0, p_huber - conformal_radius)
+    conf_upper = p_huber + conformal_radius
 
     # Empirical particle dispersion (individual firebrands)
     # Average observed std in wind-tunnel water pans scales with wind: ~0.15 * wind + 0.5 m
     est_dispersion_std = max(0.7, 0.14 * wind + 0.3)
-    p10_particle = max(0.0, p_ens - 1.28 * est_dispersion_std)
-    p90_particle = p_ens + 1.28 * est_dispersion_std
+    p10_particle = max(0.0, p_huber - 1.28 * est_dispersion_std)
+    p90_particle = p_huber + 1.28 * est_dispersion_std
 
     print(f"Model Predictions for Experimental Landing Distance:")
     print(f"  Prospective Ridge Regression:       {p_ridge:.2f} m")
+    print(f"  Prospective Huber Regressor (Robust): {p_huber:.2f} m")
     print(f"  Prospective Random Forest (depth=2): {p_rf:.2f} m")
     print(f"  Prospective Parsimonious Ensemble:  {p_ens:.2f} m")
+    if p_e_info is not None:
+        print(f"  Deep Experimental Surrogate (Model E): {p_e_info[1]:.2f} m  [80% Bounds: {p_e_info[0]:.2f} m — {p_e_info[2]:.2f} m]")
     print(f"  -------------------------------------------------------------")
-    print(f"  ★ PREDICTED RUN MEDIAN DISTANCE:    {p_ens:.2f} m")
+    print(f"  ★ RECOMMENDED OPERATIONAL DISTANCE: {p_huber:.2f} m")
     print(f"  ★ 80% CONFORMAL INTERVAL (Median):  [{conf_lower:.2f} m  —  {conf_upper:.2f} m] (Radius: +/- {conformal_radius:.2f} m)")
     print(f"  ★ ESTIMATED PARTICLE DISPERSION:    [{p10_particle:.2f} m  —  {p90_particle:.2f} m] (Spread of individual embers around median)")
     print("=" * 75)

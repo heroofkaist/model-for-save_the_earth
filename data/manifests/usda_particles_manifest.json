@@ -1,0 +1,52 @@
+{
+  "dataset_name": "USDA JFSP 15-1-04-4 Statistically Reconstructed Particle Benchmark",
+  "description": "Synthetic firebrand particle distribution reconstructed via moment-matched multivariate copula from USDA JFSP 15-1-04-4 final report statistics (Appendix E, Tables 4-26). Evaluates model consistency against reconstructed empirical distributions, not raw physical sensor catch records.",
+  "data_nature": "synthetic_statistical_reconstruction_from_experimental_moments",
+  "file_name": "usda_individual_firebrands.csv",
+  "sha256": "b6c46b0dc0f82375ef5a055cd3a58c697175f00696e3f652978802ed148521d4",
+  "file_size_bytes": 20577603,
+  "total_records": 60370,
+  "split_counts": {
+    "train": 46078,
+    "validation": 5451,
+    "test": 8841
+  },
+  "fuel_category_counts": {
+    "structural": 51121,
+    "vegetative": 9249
+  },
+  "provenance": {
+    "source_runs_file": "data/processed/canonical_particle_distance.csv",
+    "runs_sha256": "f325622cf48708bf5218f1b4abc78e3fe4c1552f3320203ecee4a84dfe9fce4f",
+    "split_map_file": "data/manifests/split_v1.csv",
+    "split_sha256": "4339bb6f5196ae7e91e53389107553c4ed9fcc9b317910268f4c217522666d0e",
+    "original_dois": [
+      "10.2737/RDS-2020-0035",
+      "10.2737/RDS-2020-0034"
+    ],
+    "report_citation": "Hedayati et al. (2018), JFSP Project 15-1-04-4 Final Report"
+  },
+  "summary_statistics": {
+    "landing_distance_m": {
+      "mean": 4.4846047656058845,
+      "std": 5.2790533852479165,
+      "median": 2.7160244502191224,
+      "min": 0.1,
+      "max": 35.0
+    },
+    "mass_kg": {
+      "mean": 0.0003084852629612433,
+      "std": 0.0017411179725967617,
+      "median": 6.127784036769446e-05,
+      "min": 1e-06,
+      "max": 0.1
+    },
+    "projected_area_m2": {
+      "mean": 0.0003308902723023263,
+      "std": 0.0007329373483080431,
+      "median": 0.00015308814177442473,
+      "min": 1e-06,
+      "max": 0.05
+    }
+  }
+}
