@@ -3,7 +3,7 @@
 **Read this first.** This document is a factual orientation for a future AI writing assistant and the four-person KAIST team. It is **not** the final application, a host invitation, or a claim of completed experimental 3D validation.
 
 **Repository:** [heroofkaist/model-for-save_the_earth](https://github.com/heroofkaist/model-for-save_the_earth)  
-**Context snapshot:** 2026-11-03, based on the repository after the grant-document updates.  
+**Context snapshot:** 2026-11-03; factual evidence checked against `main` at `f447d933f5` before this documentation branch.  
 **Program:** teamKAIST *Save the Earth* Global Challenge (overseas expedition). **Verify all eligibility, deadline, format, and budget rules against the official announcement and application attachments before submission.**  
 **Team:** Four KAIST students. Their actual names, majors, contributions, roles, and approvals must come from the team, **not** the illustrative roles in the draft itinerary.
 
@@ -90,7 +90,20 @@ Use the repository as **supporting technical evidence**, not as proof that all p
 
 > Our KAIST team has built a reproducible physics-and-ML firebrand transport prototype and used it to identify assumptions that cannot yet be checked against accessible time-resolved experimental observations; an Australian research expedition would allow us to engage with leading bushfire researchers, examine validated measurement methods, and define the next scientifically defensible validation study.
 
-## 7. Workflow and provenance
+## 7. Figures for the application-writing team
+
+Use the repository's **actual generated research graphics**, not decorative stock illustrations. Proposed starting points:
+
+| Figure | Source | Essential caption caveat |
+| --- | --- | --- |
+| Physical-mechanism ablation | [physics_ablation_comparison.png](figures/physics_ablation_comparison.png) | Numerical differences between *assumed mechanisms*; not experimental validation |
+| Flight sensitivity | [physics_sensitivity.png](figures/physics_sensitivity.png) | Parameter sensitivity in declared numerical scenarios |
+| Particle-model error comparison | [usda_model_comparison_particle_mae.png](figures/usda_model_comparison_particle_mae.png) | Against **moment-matched reconstructed synthetic particles**, not original USDA catch logs |
+| By-wind error comparison | [usda_error_by_wind_speed.png](figures/usda_error_by_wind_speed.png) | Same reconstructed-particle benchmark; not a real-world 3D test |
+
+Verify figure labels and checkpoint versions against the associated JSON outputs before quoting precise numbers. An appropriate grant graphic should make the **unresolved measurement question** visible rather than exaggerating a synthetic accuracy score.
+
+## 8. Workflow and provenance
 
 - Repository tests: `python3 -m unittest discover -s tests -v`.
 - Main pipeline: `python3 run_pipeline.py` (may regenerate outputs and require dependencies/raw files).
