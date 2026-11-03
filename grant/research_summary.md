@@ -1,11 +1,11 @@
 # KAIST Save the Earth Global Challenge — Research Summary
 
 **Project Title:** Multi-Scale Physics-Informed Learning for Wildfire Spotting and Firebrand Dispersion  
-**Applying Team:** KAIST Undergraduate / Graduate Research Team (4 Members)  
+**Applying Team:** Four KAIST students (names, majors, contributions and responsibilities to be supplied by the team)  
 **Research Initiative:** Save the Earth — KAISTian Amurs Project  
 **Target Program:** KAIST Save the Earth Global Challenge (Expedition Program)  
 **Proposed Expedition:** Australia (Canberra, Sydney, Melbourne) — 21 Days (3 Weeks)  
-**Budget Request:** $14,950 USD (strictly within the $15,000 program limit)  
+**Indicative Budget:** USD 14,950 (not a verified quote; check current KAIST program rules)  
 **Primary Repository:** [heroofkaist/model-for-save_the_earth](https://github.com/heroofkaist/model-for-save_the_earth)  
 **Date:** November 2026  
 
