@@ -172,23 +172,39 @@ def train_model(
     model.load_state_dict(checkpoint["model_state_dict"])
     model.eval()
 
+    # Conformalized Quantile Regression (CQR) Calibration (Romano et al., NeurIPS 2019)
+    # Calibrate on independent validation set to achieve guaranteed 80% coverage
     with torch.no_grad():
+        val_preds_best = model(torch.from_numpy(X_val_n)).numpy()
+        val_scores = np.maximum(val_preds_best[:, 0] - y_val, y_val - val_preds_best[:, 2])
+        alpha_cov = 0.20  # Target 80% coverage
+        k_val = int(np.ceil((len(val_scores) + 1) * (1.0 - alpha_cov)))
+        q_conformal = float(np.sort(val_scores)[min(k_val - 1, len(val_scores) - 1)])
+
+        # Update checkpoint with conformal calibration score
+        checkpoint["cqr_q_conformal"] = q_conformal
+        torch.save(checkpoint, CHECKPOINT_PATH)
+
         test_preds = model(torch.from_numpy(X_te_n)).numpy()
         test_mae = float(np.mean(np.abs(test_preds[:, 1] - y_te)))
         test_rmse = float(np.sqrt(np.mean((test_preds[:, 1] - y_te)**2)))
         test_bias = float(np.mean(test_preds[:, 1] - y_te))
-        test_cov = float(np.mean((y_te >= test_preds[:, 0]) & (y_te <= test_preds[:, 2])) * 100)
-        test_q10_mae = float(np.mean(np.abs(test_preds[:, 0] - y_te)))
-        test_q90_mae = float(np.mean(np.abs(test_preds[:, 2] - y_te)))
+        raw_test_cov = float(np.mean((y_te >= test_preds[:, 0]) & (y_te <= test_preds[:, 2])) * 100)
+
+        # CQR calibrated interval
+        cqr_lower = np.maximum(0.0, test_preds[:, 0] - q_conformal)
+        cqr_upper = test_preds[:, 2] + q_conformal
+        cqr_test_cov = float(np.mean((y_te >= cqr_lower) & (y_te <= cqr_upper)) * 100)
 
     print("\n" + "=" * 65)
     print("EXPERIMENTAL DEEP SURROGATE TEST RESULTS (Held-Out Test Set: N=8,841)")
     print("=" * 65)
-    print(f"Test MAE (Median Distance):    {test_mae:.3f} m")
-    print(f"Test RMSE:                     {test_rmse:.3f} m")
-    print(f"Signed Bias:                   {test_bias:+.3f} m")
-    print(f"Empirical 80% Quantile Bounds: [{np.median(test_preds[:, 0]):.2f} m — {np.median(test_preds[:, 2]):.2f} m]")
-    print(f"Empirical 80% Bound Coverage:  {test_cov:.1f}%")
+    print(f"Test MAE (Median Distance):         {test_mae:.3f} m")
+    print(f"Test RMSE:                          {test_rmse:.3f} m")
+    print(f"Signed Bias:                        {test_bias:+.3f} m")
+    print(f"Raw Pinball 80% Test Coverage:      {raw_test_cov:.1f}% (uncalibrated on OOD fuel groups)")
+    print(f"CQR Conformal Calibration Shift:    +/- {q_conformal:.3f} m")
+    print(f"CQR Calibrated 80% Test Coverage:   {cqr_test_cov:.1f}%")
     print("=" * 65)
 
     metrics = {
@@ -200,7 +216,9 @@ def train_model(
         "test_mae_m": test_mae,
         "test_rmse_m": test_rmse,
         "test_bias_m": test_bias,
-        "test_coverage_80_pct": test_cov,
+        "raw_test_coverage_80_pct": raw_test_cov,
+        "cqr_q_conformal_m": q_conformal,
+        "cqr_calibrated_coverage_80_pct": cqr_test_cov,
         "checkpoint_path": str(CHECKPOINT_PATH.relative_to(PROJECT_ROOT))
     }
 

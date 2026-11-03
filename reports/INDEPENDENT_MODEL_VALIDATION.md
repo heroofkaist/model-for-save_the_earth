@@ -33,7 +33,7 @@ The central objective of this research campaign is to determine **how accurately
 | **Deep Learning (Synthetic)** | **Model B: Neural Surrogate** | **5.178** | **7.704** | 3.420 | -1.752 | **733,756** |
 | **Mechanistic Aerodynamics** | Mechanistic RK4 Integration | 5.577 | 8.760 | 3.335 | -1.507 | 449 |
 | **Physics-Informed Hybrid** | **Model C: Hybrid Surrogate (Fixed)** | 6.302 | 8.262 | 5.055 | +1.453 | > 950,000 |
-| *Theoretical Reference* | *Oracle Constant Predictor (Median)* | *4.800* | *7.230* | *2.300* | *0.000* | *N/A* |
+| *Reference Baseline* | *Unconditional Test Median Baseline* | *4.800* | *7.230* | *2.300* | *0.000* | *N/A* |
 
 *Evaluation conducted on 8,841 held-out test particles across 3 unseen fuel groups (`corner_cedar_osb`, `recycled_shake_roof`, `mockup_fibercement_combustible`) from `data/manifests/split_v1.csv`.*
 
@@ -71,17 +71,17 @@ Status: FROZEN & UNMODIFIED
 
 ## 3. Physical Analysis of Error Scales: Particle Scatter vs. Run Median
 
-### 3.1 Why Individual Particle Error (~4.7–5.2 m) Is at the Physical Noise Floor
-A critical finding is the distinction between predicting **run-level median travel distance** versus predicting **individual particle deposition**:
-- On aggregate run medians, Prospective Ridge achieved **1.73 m MAE** (Retrospective Gradient Boosting achieved **1.57 m MAE**).
-- On individual particles, Prospective Ridge achieves **4.69 m MAE**, and Model B achieves **5.18 m MAE**.
+### 3.1 Understanding Empirical Variance: Unconditional Baseline vs. Conditional Predictors
+A critical scientific finding is the distinction between predicting **run-level median travel distance** versus predicting **individual particle deposition**:
+- On aggregate run medians, Prospective Ridge achieved **1.72 m MAE**, and Prospective Huber achieved **1.76 m MAE** (**0.995 m MAE** in 5-fold Group CV).
+- On individual particles in the held-out test set, Prospective Ridge achieves **4.69 m MAE**, and Model B achieves **5.18 m MAE**.
 
-**Mathematical and Physical Proof of the Irreducible Error Floor:**
-1. In the held-out test set, the empirical standard deviation of landing distance is $\sigma = 7.23$ meters. Particles flutter and disperse downwind across a broad 1–30 meter zone.
-2. If an oracle predictor knew the exact test-set median in advance, its theoretical mean absolute error would be:
-   $$\text{MAE}_{\text{oracle}} = \frac{1}{N} \sum_{i=1}^N |y_i - \text{median}(y)| = \mathbf{4.80 \text{ meters}}$$
-3. Because our operational models achieve **4.69 m to 5.18 m MAE**, they are operating directly at the theoretical dispersion limit of a single-point deterministic predictor.
-4. For operational wildfire spotting risk, land managers require the **expected median spot distance of the ember shower**, which our framework predicts with high accuracy (**1.57 m – 1.73 m MAE**).
+**Physical Interpretation of Test Set Scatter:**
+1. In the held-out test set (3 unseen structural fuel assemblies), the empirical standard deviation of landing distance is $\sigma = 7.23$ meters. Particles flutter and disperse downwind across a broad 1–30 meter water-pan array due to turbulent wind gusts and tumbling.
+2. A constant predictor issuing the unconditional test-set median achieves a reference MAE of:
+   $$\text{MAE}_{\text{constant\_median}} = \frac{1}{N} \sum_{i=1}^N |y_i - \text{median}(y)| = \mathbf{4.80 \text{ meters}}$$
+3. This 4.80 m value serves as a reference scale for the unconditional spread of particles around their central tendency. While conditional models exploiting detailed particle-level covariates (e.g., in-flight lift, instantaneous orientation) can theoretically achieve lower errors, deterministic single-point predictions in unmeasured turbulent flows carry high residual uncertainty.
+4. Consequently, rather than relying on a single deterministic point estimate, particle-level prediction must be framed as a **calibrated probabilistic interval ($q_{10} - q_{90}$)**. For operational incident commanders, the relevant decision metric remains the **expected shower median distance**, which our models predict with high accuracy (**0.995 m CV MAE, 1.76 m Test MAE**).
 
 ### 3.2 Model C Hybrid Surrogate Correction
 In our preliminary benchmark run, Model C exhibited an anomalous error of 477.5 m. Detailed code auditing identified a **double-denormalization bug**: Model C outputs direct physical predictions ($\mathbf{x} = \mathbf{x}_{\text{ballistic}} + \Delta \mathbf{x}$), but the evaluation script was multiplying the output by `stats["land_std"]`. Correcting this bug and calibrating release height to the physical burner center ($h = 1.22$ m) brought Model C's MAE down to **6.302 m** (Bias = +1.45 m).
@@ -101,7 +101,22 @@ Consequently, Models B and C trained on those 10,000 synthetic trajectories were
 To address this limitation directly, we developed **Model E (`ExperimentalDistanceNet`)**, trained directly on the empirical observations from the USDA JFSP 15-1-04-4 experiments (60,370 particles across 69 tests):
 1. **Architecture:** Deep Residual MLP with LayerNorm, SiLU activations, and multi-quantile Pinball loss ($q_{10}, q_{50}, q_{90}$).
 2. **Performance on Validation:** Best Validation MAE = **2.558 m**, with 80% coverage interval $[q_{10}, q_{90}]$ covering **74.8%** of real particle landings.
-3. **Probabilistic Output:** Rather than issuing a fragile point prediction for chaotic turbulent ember transport, Model E outputs the calibrated 80% landing bounds $[q_{10}, q_{90}]$, capturing the physical dispersion seen in experiments.
+3. **Probabilistic Output & Conformal Calibration (CQR):** Rather than issuing a fragile point prediction for chaotic turbulent ember transport, Model E outputs 80% landing bounds $[q_{10}, q_{90}]$. On independent validation data, coverage is **75.4%**. When transferred to unseen test fuel assemblies (`corner_cedar_osb`, `recycled_shake_roof`, `mockup_fibercement_combustible`), raw coverage drops to **60.1%** due to structural fuel domain shift. Applying Conformalized Quantile Regression (CQR, Romano et al. 2019) calibrated on validation residuals shifts the interval by $\pm 0.167$ m, improving test coverage to **63.4%**.
+
+### 3.5 Systematic Physical Ablation Study (Aerodynamics & Combustion Mechanisms)
+To isolate the physical impact of newly added mechanisms from Tohidi & Kaye (2017), Wong et al. (CSIRO 2026), and Albini (1979), we executed a controlled factorial ablation study across 3 particle morphologies, 3 wind regimes, and 2 detachment heights ([`reports/physics_ablation_results.json`](file:///Users/heroofhumanity/Projects%20VS%20code/model%20for%20save_the_earth/reports/physics_ablation_results.json)):
+
+| Configuration | Description | Mean Distance Shift | Max Distance Shift | Flight Time Shift |
+|---|---|---:|---:|---:|
+| **Config 1 (Baseline)** | Quadratic drag only ($C_d=1.0, C_l=0$, inert) | Ref (0.0%) | Ref (0.0%) | Ref (0.0%) |
+| **Config 2 (+ Tohidi Lift)** | Aspect-ratio $C_d(\lambda)$ and tumbling lift $C_l$ | **+7.4%** | **+22.6%** | **+9.3%** |
+| **Config 3 (+ Wong Buoyancy)** | Active combustion micro-plume ($\eta_{\text{buoy}}=1.18$) | **+19.5%** | **+35.6%** | **+19.9%** |
+| **Config 4 (+ Albini Full)** | Coupled burning mass and area loss ($\beta=0.02 \text{ s}^{-1}$) | **+19.7%** | **+36.0%** | **+20.2%** |
+
+*Ablation Insights:*
+- For high-aspect slender bark flakes, tumbling lift retards descent and produces a **+22.6%** increase in landing distance.
+- Active combustion micro-plume buoyancy (Wong et al., CSIRO 2026) reduces effective downward settling acceleration, extending downwind travel distance by **+19.5%** on average and up to **+35.6%** under high winds.
+- Coupling area shrinkage with mass loss ($A(t) \propto m(t)^{2/3}$) prevents unphysical aerodynamic deceleration, maintaining physical trajectory consistency.
 
 ---
 
@@ -155,7 +170,7 @@ The updated, verified diagnostic plots are in [`reports/figures/`](file:///Users
 
 ## 7. Concrete Next Steps for Real Model Improvement
 
-1. **Probabilistic Conformal Landing Intervals:** Because individual firebrands have an irreducible $\pm 7$ m spread, replace single-point predictions with calibrated conformal intervals $[x_{\text{min}}, x_{\text{max}}]$ that guarantee 80% coverage of the landing zone.
+1. **Probabilistic Conformal Landing Intervals:** Because turbulent wind-tunnel flow creates substantial particle dispersion ($\sigma \approx 7.2$ m), replace single-point predictions with calibrated conformal intervals $[x_{\text{min}}, x_{\text{max}}]$ that guarantee valid coverage of the landing zone.
 2. **Prior Probability Density Estimation for Pre-Flight Features:** To eliminate the post-landing mass/area dependency, train fuel-specific priors $p(m, A \mid \text{fuel}, \text{wind})$ to marginalize over unobservable particle dimensions.
 3. **Formal In-Flight Data Acquisition:** Establish data sharing agreements with CSIRO (vertical wind tunnel) and NIST to obtain verified in-flight 3D time-series coordinates with confirmed frame rates.
 
