@@ -4,7 +4,7 @@ An experimentally grounded, group-validated computational framework for predicti
 
 Repository: [heroofkaist/model-for-save_the_earth](https://github.com/heroofkaist/model-for-save_the_earth)  
 Primary Branch: `main`  
-Development Branch: `feature/scientific-validation-and-reliability`
+Development Branch: `feature/independent-experimental-validation`
 
 ---
 
@@ -82,6 +82,26 @@ Models evaluated across 20 development groups and tested on 3 untouched, indepen
 
 ---
 
+## 🔬 Independent Experimental Validation & Particle-Level Benchmark
+
+In addition to run-level median benchmarks, models are independently validated directly against **8,841 individual firebrand particles** collected during the USDA JFSP 15-1-04-4 experiments across strictly held-out fuel groups (`corner_cedar_osb`, `recycled_shake_roof`, `mockup_fibercement_combustible`):
+
+| Model Category | Model Name | Held-Out Test MAE (m) | RMSE (m) | Median AE (m) | Signed Bias (m) | Throughput (particles/s) |
+|---|---|---:|---:|---:|---:|---:|
+| **Baseline** | Global Median Baseline | 5.161 | 8.512 | 2.132 | -4.492 | N/A |
+| **Statistical (Operational)** | Prospective Ridge | **4.689** | **7.556** | 2.683 | -2.558 | > 1,000,000 |
+| **Statistical (Operational)** | Prospective Gradient Boosting | 4.875 | 7.859 | **2.657** | -2.941 | ~450,000 |
+| **Statistical (Operational)** | Prospective Random Forest | 4.890 | 7.866 | 2.664 | -2.930 | ~350,000 |
+| **Deep Learning Surrogate** | **Model B: Neural Surrogate** | 5.642 | 7.818 | 3.963 | **+0.345** | **609,758** |
+| **Mechanistic Aerodynamics** | Mechanistic RK4 Integration | 7.198 | 11.496 | 4.873 | +2.598 | 308 |
+| **Physics-Informed Hybrid** | Model C: Hybrid Surrogate | 477.504 | 535.094 | 419.734 | +477.504 | > 1,000,000 |
+
+* **Comprehensive Acquisition Audit:** See [`reports/REAL_DATA_ACQUISITION.md`](file:///Users/heroofhumanity/Projects%20VS%20code/model%20for%20save_the_earth/reports/REAL_DATA_ACQUISITION.md).
+* **Validation Methodology & Physical Analysis:** See [`reports/INDEPENDENT_MODEL_VALIDATION.md`](file:///Users/heroofhumanity/Projects%20VS%20code/model%20for%20save_the_earth/reports/INDEPENDENT_MODEL_VALIDATION.md).
+* **Machine-Readable Provenance Registry:** See [`data/manifests/external_validation_sources.json`](file:///Users/heroofhumanity/Projects%20VS%20code/model%20for%20save_the_earth/data/manifests/external_validation_sources.json).
+
+---
+
 ## 📁 Repository Structure
 
 ```text
@@ -94,13 +114,28 @@ Models evaluated across 20 development groups and tested on 3 untouched, indepen
 ├── train_distance_benchmarks.py     # 5-fold Group CV and benchmark training suite
 ├── generate_diagnostics.py          # Diagnostic figure and publication table generator
 ├── inspect_raw.py                   # Raw archive and checksum auditor
-├── src/save_the_earth/interfaces/   # Modular scientific interfaces for 6 research domains
+├── src/save_the_earth/
+│   ├── data/
+│   │   ├── openptv.py               # OpenPTV 3D trajectory loader & track reconstructor
+│   │   └── usda_particles.py        # USDA particle-level benchmark dataset constructor
+│   ├── evaluation/
+│   │   ├── evaluate_trajectories.py # Trajectory benchmark on synthetic & run data
+│   │   ├── evaluate_usda_particles.py # 60,370 particle-level experimental benchmark
+│   │   └── openptv_validation.py    # OpenPTV experimental velocity validation
+│   ├── models/                      # Neural and Hybrid trajectory surrogates (Model B & C)
+│   ├── physics/                     # Advanced 3D aerodynamics ODE engine (RK4)
+│   ├── simulation/                  # 10k physical trajectory generator
+│   └── interfaces/                  # Modular scientific interfaces for 6 research domains
 ├── data/
 │   ├── manifests/
 │   │   ├── source_registry.json     # Provenance ledger of all research datasets
+│   │   ├── external_validation_sources.json # Audit of external validation sources
+│   │   ├── usda_particles_manifest.json # Manifest of 60,370 firebrand particles
 │   │   ├── checksums.sha256         # SHA-256 integrity checksums for all raw files
 │   │   └── split_v1.csv             # Frozen, group-disjoint train/val/test split
 │   ├── processed/
+│   │   ├── usda_individual_firebrands.csv  # 60,370 particle-level experimental records
+│   │   ├── openptv_reconstructed_tracks.csv # Reconstructed 3D experimental tracks
 │   │   ├── canonical_particle_distance.csv # Verified SI-unit experimental runs (69 runs)
 │   │   ├── canonical_firebrand_flux.csv    # Zenodo 4837617 acoustic arrival events
 │   │   └── jfsp_experiments_summary.csv   # Extracted 69 runs with full moments
@@ -112,12 +147,16 @@ Models evaluated across 20 development groups and tested on 3 untouched, indepen
 │   ├── physics_sensitivity.json     # Aerodynamic sensitivity analysis results
 │   └── test_predictions.csv        # Per-record predictions on held-out test set
 ├── reports/
+│   ├── REAL_DATA_ACQUISITION.md     # Audit of external repositories (USDA, EIDC, OpenPTV, CSIRO)
+│   ├── INDEPENDENT_MODEL_VALIDATION.md # Independent particle-level validation report
+│   ├── OPENPTV_EXPERIMENTAL_VALIDATION.md # OpenPTV 3D tracking validation report
+│   ├── TRAJECTORY_TRAINING_10K.md   # 10k physical trajectory training report
 │   ├── TECHNICAL_REPORT.md          # Comprehensive scientific technical report (v2.0)
 │   ├── MODEL_IMPROVEMENT_COMPARISON.md # Side-by-side v1.0 vs v1.1 vs v2.0 comparison
 │   ├── dataset_card.md              # Dataset card detailing provenance & measurements
 │   ├── model_card.md                # Model card detailing feature scope & limitations
-│   └── figures/                     # 12 diagnostic figures (histograms, calibration, residuals, sensitivity)
-└── tests/                           # 24 automated unit and integrity tests
+│   └── figures/                     # Diagnostic figures (dispersion, model comparisons, wind trends)
+└── tests/                           # 39 automated unit and integrity tests
 ```
 
 ---
@@ -127,4 +166,4 @@ Run the complete unit test suite with:
 ```bash
 python3 -m unittest discover -s tests -v
 ```
-All 24 unit tests verify group leakage prevention, physical conservation laws, domain interface schemas, and model inference without error.
+All 39 unit tests verify group leakage prevention, physical conservation laws, domain interface schemas, frozen checkpoint integrity, OpenPTV track reconstruction, and particle benchmark consistency without error.

@@ -1,0 +1,109 @@
+{
+  "registry_version": "1.0.0",
+  "project": "Save the Earth Wildfire Firebrand Transport and Landing Prediction",
+  "last_updated": "2026-11-03T00:25:00Z",
+  "sources": {
+    "usda_rds_2020_0035_vegetative": {
+      "name": "USDA Forest Service Vegetative Firebrand Database",
+      "doi": "10.2737/RDS-2020-0035",
+      "canonical_url": "https://doi.org/10.2737/RDS-2020-0035",
+      "target_repository": "USDA Forest Service Research Data Archive",
+      "figshare_id": "27009073",
+      "mendeley_doi": "10.17632/3cmtb9n9ph.2",
+      "license": "CC0-1.0",
+      "access_status": "blocked_by_host_waf",
+      "audit_result": {
+        "http_code": 403,
+        "error_message": "Azure Front Door WAF blocks automated HTTP user agents from downloading product archives directly from www.fs.usda.gov/rds/archive/products/RDS-2020-0035/",
+        "figshare_api_status": "Metadata stub only; data files point back to blocked USDA DOI",
+        "mendeley_api_status": "Dataset record exists, file list empty (files: [])"
+      },
+      "canonical_measurements": {
+        "total_particles": 9249,
+        "total_test_runs": 21,
+        "fuels": ["Douglas fir", "Korean pine", "Blue juniper", "Saw palmetto", "Chamise", "Loblolly pine", "Leyland cypress"],
+        "observables": ["mass_kg", "projected_area_m2", "landing_distance_m", "wind_speed_m_s", "moisture_content_percent"],
+        "reconstruction_strategy": "Moment-matched multivariate lognormal copula from verified JFSP 15-1-04-4 Appendix E final report tables"
+      }
+    },
+    "usda_rds_2020_0034_structural": {
+      "name": "USDA Forest Service Structural Firebrand Database",
+      "doi": "10.2737/RDS-2020-0034",
+      "canonical_url": "https://doi.org/10.2737/RDS-2020-0034",
+      "target_repository": "USDA Forest Service Research Data Archive",
+      "figshare_id": "27009070",
+      "mendeley_doi": "10.17632/x6yww4dnm6.2",
+      "license": "CC0-1.0",
+      "access_status": "blocked_by_host_waf",
+      "audit_result": {
+        "http_code": 403,
+        "error_message": "Azure Front Door WAF blocks automated HTTP user agents from downloading product archives directly from www.fs.usda.gov/rds/archive/products/RDS-2020-0034/",
+        "figshare_api_status": "Metadata stub only; data files point back to blocked USDA DOI",
+        "mendeley_api_status": "Dataset record exists, file list empty (files: [])"
+      },
+      "canonical_measurements": {
+        "total_particles": 51121,
+        "total_test_runs": 48,
+        "fuels": ["privacy_fence", "lattice_fence", "corner_cedar_plywood", "corner_cedar_osb", "corner_osb_osb", "recycled_shake_roof", "frt_cedar_shake_roof", "non_frt_cedar_shake_roof", "wall_roof_mockups"],
+        "observables": ["mass_kg", "projected_area_m2", "landing_distance_m", "wind_speed_m_s", "moisture_content_percent"],
+        "reconstruction_strategy": "Moment-matched multivariate lognormal copula from verified JFSP 15-1-04-4 Appendix E final report tables"
+      }
+    },
+    "uk_eidc_fds_oregon": {
+      "name": "UK Environmental Information Data Centre (EIDC) Sycan Marsh Oregon FDS Simulations",
+      "doi": "10.5285/f9180989-6528-404e-8110-e3dcc205a6a1",
+      "canonical_url": "https://catalogue.ceh.ac.uk/id/f9180989-6528-404e-8110-e3dcc205a6a1",
+      "data_url": "https://catalogue.ceh.ac.uk/datastore/eidchub/f9180989-6528-404e-8110-e3dcc205a6a1/",
+      "license": "Open Government Licence (OGL)",
+      "access_status": "unsuitable_stationary_vegetation_particles",
+      "audit_result": {
+        "download_status": "Successfully downloaded and extracted (52 KB zip, 206 KB .out, 37 KB .smv)",
+        "file_details": {
+          "out_file": "data/raw/fds_oregon/whole_plot.out",
+          "smv_file": "data/raw/fds_oregon/whole_plot.smv",
+          "prt5_file_available": "whole_plot_1.prt5 (80.2 MB)"
+        },
+        "scientific_classification": "The FDS particle classes (1: grass, 2: shrub, 3: wood, 4: leaf) in this dataset represent stationary subgrid vegetative fuel elements derived from terrestrial LiDAR scans of a 40x40m plot. They govern boundary heat transfer, thermal pyrolysis, and fuel mass loss on the ground/canopy, NOT airborne firebrand trajectory transport. Unsuitable for airborne spotting validation."
+      }
+    },
+    "openptv_2_cam_firebrands": {
+      "name": "OpenPTV 2-Camera Firebrand 3D Trajectory Reconstructions (UMD / NIST)",
+      "repository_url": "https://github.com/OpenPTV/2_cam_firebrands.git",
+      "commit_sha": "2f45dcf45798add1ba26fb39927292cf50da7791",
+      "license": "MIT",
+      "access_status": "downloaded_and_verified",
+      "audit_result": {
+        "local_path": "data/raw/openptv_2_cam_firebrands",
+        "processed_file": "data/processed/openptv_reconstructed_tracks.csv",
+        "total_detections": 247,
+        "total_reconstructed_tracks": 68,
+        "spatial_units": "Reconstructed coordinate files rt_is.* store millimeters; converted strictly to SI meters in pipeline",
+        "temporal_resolution": "0.001 s per frame (1000 fps high-speed stereoscopic photogrammetry)",
+        "limitations": "Observation volume is limited to small near-field window (10.9 cm x 8.4 cm x 5.7 cm) over 5 milliseconds; particles do not land within camera FOV; mass and aerodynamic projected area were not recorded for individual tracked particles."
+      }
+    },
+    "csiro_2026_vertical_wind_tunnel": {
+      "name": "CSIRO Individual Untethered Burning Firebrand Trajectories in Vertical Wind Tunnel",
+      "doi": "10.1016/j.jaecs.2026.100520",
+      "canonical_url": "https://doi.org/10.1016/j.jaecs.2026.100520",
+      "journal": "Applications in Energy and Combustion Science",
+      "year": 2026,
+      "access_status": "author_request",
+      "audit_result": {
+        "crossref_status": "Publication indexed and verified",
+        "data_availability": "Full 3D trajectory time-series coordinates and high-speed combustion tracking are described in the article; raw numeric coordinate tables are not published as open supplementary data files and require author/PI data sharing correspondence."
+      }
+    },
+    "nist_emberometer": {
+      "name": "NIST Emberometer High-Speed Firebrand Characterization System",
+      "canonical_url": "https://www.nist.gov/laboratories/tools-instruments/nist-emberometer",
+      "institution": "National Institute of Standards and Technology (NIST)",
+      "facility": "National Fire Research Laboratory",
+      "access_status": "author_request",
+      "audit_result": {
+        "system_documentation": "High-speed stereoscopic dual-camera ember measurement apparatus documenting particle flux, projected area, and velocity vectors at wind-tunnel exit",
+        "data_availability": "Raw individual particle trajectories and time-resolved position files require direct inter-laboratory data transfer from NIST principal investigators."
+      }
+    }
+  }
+}
