@@ -1,186 +1,89 @@
-# Save the Earth — Wildfire Firebrand Transport & Deposition Prediction Framework
+# Save the Earth — Wildfire Firebrand Transport Research
 
-An experimentally grounded, group-validated computational framework for predicting wildfire ember transport, landing distributions, and spotting risk (**KAISTian Amurs Research Project**).
+**Status: reproducible computational research prototype, not a validated operational wildfire forecast.**
 
-Repository: [heroofkaist/model-for-save_the_earth](https://github.com/heroofkaist/model-for-save_the_earth)  
-Primary Branch: `main`  
-Grant-writing handoff: **[grant/AI_CONTEXT.md](grant/AI_CONTEXT.md)** · **[Evidence and claim register](grant/CLAIM_REGISTER.md)**
+This KAIST student research project studies how windborne burning particles (firebrands) are transported and deposited. It combines a numerical 3D aerodynamic model, literature-informed simplified combustion physics, neural surrogates, and evaluation against published experimental *run-level* landing summaries. The project's key unresolved challenge is independent validation with matched, time-resolved physical trajectory measurements.
 
----
+> **KAIST Save the Earth Global Challenge — start here:** [AI research handoff](grant/AI_CONTEXT.md) · [Claim and evidence register](grant/CLAIM_REGISTER.md) · [Scientific evidence](grant/scientific_evidence.md) · [Model limitations](grant/model_limitations.md). These files provide context for the four-person team's **separately written official application**. The repo contains no approved itinerary, host invitation, final application or confirmed experimental access.
 
-> **For the KAIST Global Challenge application:** Start with the [research handoff](grant/AI_CONTEXT.md) and [claim register](grant/CLAIM_REGISTER.md), not isolated accuracy numbers from an older report. The 60,370 USDA-derived particle rows are **moment-matched synthetic reconstructions**, not original measured particle catch records. Full real-world 3D trajectory accuracy has not yet been established. The team writes and approves the final official application separately.
+## Research question and scope
 
-## ⚡ Quickstart: Single-Command Execution
+Can computational models estimate the transport and landing of windborne embers under stated aerodynamic assumptions, and which additional physical measurements are necessary to validate these predictions?
 
-To execute the entire scientific pipeline end-to-end (physics verification, sensitivity analysis, data extraction, quality control, 5-fold group cross-validation, multi-model ensemble training, diagnostic plotting, and test suite execution):
+**Three different outcomes must not be conflated:**
+
+1. **Particle transport/deposition** — airborne path, flight time, landing position or run-median landing distance. This is the primary implemented task.
+2. **Thermal survival** — whether an ember remains hot or burning when it lands. Not validated.
+3. **Spot-fire ignition and growth** — whether receptive fuel ignites and the new fire spreads. Not validated or forecast by this project.
+
+## What is implemented
+
+| Component | Implemented work | Source |
+| --- | --- | --- |
+| Numerical transport | RK4 particle integration with drag, gravity, idealized wind shear and updraft; optional simplified lift, effective combustion buoyancy and mass/area shrinkage | [3D physics engine](src/save_the_earth/physics/aerodynamics.py) |
+| Fast trajectory approximators | Models B (neural) and C (physics-hybrid) trained on simulated RK4 trajectories | [trajectory models](src/save_the_earth/models/trajectory_models.py) · [training report](reports/TRAJECTORY_TRAINING_10K.md) |
+| Experimental-run landing predictors | Ridge, Huber, random-forest and other baselines for **aggregate run-median** deposition distance | [benchmark implementation](train_distance_benchmarks.py) · [evidence](grant/scientific_evidence.md) |
+| Reconstructed particle distribution | Generated, moment-matched synthetic particle records derived from published USDA statistics; **not original measured particle rows** | [dataset manifest](data/manifests/usda_particles_manifest.json) |
+| Model E | Deep quantile/distance estimator trained on reconstructed synthetic rows | [model](src/save_the_earth/models/experimental_surrogate.py) · [recorded metrics](reports/experimental_training_metrics.json) |
+| OpenPTV geometry | Ingestion/reconstruction of limited real optical 3D tracks; verified timebase and release conditions are missing | [OpenPTV analysis](reports/OPENPTV_EXPERIMENTAL_VALIDATION.md) |
+| Numerical sensitivity and ablation | Impact of model assumptions on simulated landing and flight time | [ablation results](reports/physics_ablation_results.json) · [sensitivity script](physics_sensitivity.py) |
+
+The drag/lift, combustion-buoyancy and shrinkage terms are **literature-informed phenomenological approximations**, not a verified six-degree-of-freedom orientation/combustion solver. See [scientific limitations](grant/model_limitations.md) and verify specific citations against primary papers before external publication.
+
+## Results — each metric has a distinct target
+
+| Dataset / evidence | Recorded result | What it does **not** establish |
+| --- | --- | --- |
+| **10,000 simulated trajectories** (1,500 simulated held-out test paths; 500 additional OOD scenarios) | Model C **1.750 m 3D position MAE**, Model B **4.736 m** against RK4-generated paths | Real-world firebrand trajectory accuracy. Model B's recorded OOD 3D MAE is ~**113.1 m** |
+| **69 published USDA/IBHS experimental-run summaries** | Huber **0.995 m** five-fold group-CV MAE and **1.763 m** held-out test MAE; Ridge held-out test MAE **1.721 m** | 3D motion, individual-particle landing error, thermal survival or actual ignition |
+| **60,370 synthetic reconstructions from USDA moments** (8,841 synthetic held-out test rows) | Prospective Ridge **4.689 m** MAE on reconstructed particles | Direct measurement or independent individual-particle experimental validation |
+| **Model E on reconstructed synthetic particles** | Latest recorded test MAE **5.248 m**; nominal 80% intervals cover only **60.1%** of test rows, or **63.4%** after CQR | Reliable, well-calibrated 80% uncertainty on new real fuels |
+| **OpenPTV optical reconstruction** | Recorded **68 multi-frame tracks** from a short image sequence | Quantitative velocity or full 3D prediction MAE without verified FPS, wind, particle properties and release conditions |
+
+Evidence and versions: [synthetic trajectory metrics](reports/trajectory_evaluation_metrics.json), [reconstructed particle metrics](reports/usda_particle_evaluation_metrics.json), [latest Model E training metrics](reports/experimental_training_metrics.json), [USDA experiment provenance](reports/REAL_DATA_ACQUISITION.md), [claim register](grant/CLAIM_REGISTER.md). Some older outputs are from different model checkpoints/evaluation stages: **do not combine numbers from different runs without checking their version and task**.
+
+### Why experiment matters
+
+In the numerical sensitivity study, changing unmeasured release height can substantially change predicted landing distance. The added aerodynamic/combustion mechanisms also change modeled trajectories in an ablation study. These are **computed sensitivities under assumptions**, not experimental measurements or evidence of improved real-world accuracy. Controlled observations with verified timestamps, wind conditions, geometry, orientation and release kinematics are needed to test whether the approximations hold.
+
+Australian research groups including CSIRO and UNSW Canberra offer relevant expertise in bushfire physics and measurement methods. They are **potential research contacts only**; no laboratory visit, supervision, data sharing, or new experiment is confirmed. See [Australia research prospecting](docs/AUSTRALIA_RESEARCH_PLAN.md).
+
+![Simulation-based sensitivity of landing distance to physical assumptions](reports/figures/physics_sensitivity.png)
+
+*Figure: numerical model sensitivity, not external validation.*
+
+## Getting started
+
+Install dependencies and run the checked-in tests:
 
 ```bash
-# 1. Install dependencies
 python3 -m pip install -r requirements.txt
+python3 -m unittest discover -s tests -v
+```
 
-# 2. Run the complete pipeline with ONE command
+Run the main research pipeline (requires the dependencies and source artifacts expected by the scripts):
+
+```bash
 python3 run_pipeline.py
 ```
 
-### 🎯 Operational Firebrand Distance Prediction
-Query the calibrated prospective model for predicted median travel distance and conformal uncertainty bounds under any wind and vegetation scenario:
+Query a **research-only** run-median deposition-distance estimator within its modeled wind-tunnel context:
 
 ```bash
 python3 run_pipeline.py --predict --wind 15.0 --category vegetative
 ```
 
-Example Output:
-```text
-================ EXPERIMENTAL FIREBRAND DISTANCE PREDICTION ================
-Model Version: v2.0-group-cv-calibrated | Dataset: USDA JFSP 15-1-04-4 (Aggregated Runs)
-Input Parameters: Nominal Wind = 15.00 m/s | Fuel Category = vegetative
----------------------------------------------------------------------------
-Model Predictions for Experimental Landing Distance:
-  Prospective Ridge Regression:       2.34 m
-  Prospective Random Forest (depth=2): 2.12 m
-  Prospective Parsimonious Ensemble:  2.23 m
-  -------------------------------------------------------------
-  ★ PREDICTED RUN MEDIAN DISTANCE:    2.23 m
-  ★ 80% CONFORMAL INTERVAL (Median):  [0.77 m  —  3.92 m] (Radius: +/- 1.58 m)
-  ★ ESTIMATED PARTICLE DISPERSION:    [0.00 m  —  5.30 m] (Spread of individual embers around median)
-===========================================================================
-⚠️  SCIENTIFIC DISCLAIMER:
-   This prediction estimates physical deposition distance in wind-tunnel water pans.
-   It does NOT predict particle thermal survival, fuel bed ignition, or macroscopic spot fires.
-===========================================================================
-```
+The command above is **not** a wildfire warning, risk map, ignition forecast or field-ready estimate.
 
----
+## Where to look
 
-## 🔬 Scientific Architecture & Levels of Evidence
+- **Scientific handoff to another AI:** [grant/AI_CONTEXT.md](grant/AI_CONTEXT.md)
+- **Claim-by-claim source map:** [grant/CLAIM_REGISTER.md](grant/CLAIM_REGISTER.md)
+- **Evidence summary:** [grant/scientific_evidence.md](grant/scientific_evidence.md)
+- **Known model limitations:** [grant/model_limitations.md](grant/model_limitations.md)
+- **Experimental-data acquisition and availability:** [reports/REAL_DATA_ACQUISITION.md](reports/REAL_DATA_ACQUISITION.md)
+- **Source metadata and synthetic data labeling:** [data/README.md](data/README.md) · [USDA manifest](data/manifests/usda_particles_manifest.json)
+- **Experimental and numerical reports:** [reports/](reports/) and [source code](src/save_the_earth/)
+- **Bibliography for verification:** [grant/references.bib](grant/references.bib)
 
-### 1. Rigorous Separation of the Four Levels of Evidence
-To ensure absolute scientific honesty and avoid overclaiming, this repository strictly distinguishes between four levels of scientific proof:
-
-| Evidence Level | Evidence Source | What It Scientifically Validates | What It Does NOT Validate |
-|---|---|---|---|
-| **Level 1: Numerical Surrogate Capacity** | 10,000 in-silico RK4 trajectory simulations | Verifies that deep neural networks (Models B & C) can learn to approximate a non-linear ODE aerodynamic solver | Does NOT validate against nature or real physical firebrands |
-| **Level 2: Joint Distribution Consistency** | 60,370 moment-matched Gaussian-copula particles | Tests model consistency against reconstructed multivariate empirical distributions from USDA JFSP 15-1-04-4 | Are NOT raw individual experimental sensor catch logs |
-| **Level 3: Operational Deposition Validation** | 69 full-scale wind-tunnel burn series (IBHS/USDA) | Validates prospective and diagnostic models against published aggregate physical deposition distances | Does NOT provide time-resolved 3D in-flight coordinates |
-| **Level 4: Photogrammetric Spatial Kinematics** | OpenPTV 2-camera stereoscopic tracking | Validates near-field spatial displacement geometry ($\overline{\Delta x} \approx 4.2$ mm/frame) | Does NOT validate velocity dynamics (camera FPS unconfirmed) |
-
-> ⚠️ **Scientific Classification:** Models B, C, and E are **exploratory computational research prototypes**, not operationally deployed wildfire tools. We make no claim of "experimentally validated full 3D trajectory prediction" without verified in-flight time series.
-
-### 2. Six Distinct Research Targets
-The framework strictly separates six distinct physical processes to avoid confounding:
-1. **Firebrand Generation** (`src/save_the_earth/interfaces/generation.py`)
-2. **Atmospheric Transport** (`src/save_the_earth/interfaces/transport.py`)
-3. **Landing & Deposition** (`src/save_the_earth/interfaces/deposition.py`) — *Currently active*
-4. **Thermal Survival** (`src/save_the_earth/interfaces/thermal.py`)
-5. **Receptive Fuel Ignition** (`src/save_the_earth/interfaces/ignition.py`)
-6. **Wildfire Spotting** (`src/save_the_earth/interfaces/spotting.py`)
-
-> ⚠️ **Core Rule:** Never confuse an ember landing with a spot fire ignition. Spot fires represent successful ignitions conditional on fuel receptivity; wind-tunnel water pans measure mechanical transport.
-
-### 3. Evaluated Performance on 5-Fold Group CV & Frozen Test Partition (`data/manifests/split_v1.csv`)
-Models evaluated across 20 development groups and tested on 3 untouched, independent fuel groups (`mockup_fibercement_combustible`, `mockup_wood_noncombustible_roof`, `corner_osb_osb`):
-
-| Model Name | Configuration | 5-Fold Group CV MAE | Test MAE | Test RMSE | Median AE | Signed Bias |
-| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
-| **Baseline Global Median** | Prospective Reference | 1.027 ± 0.427 m | 1.838 m | 2.660 m | 0.832 m | -1.535 m |
-| **Prospective Ridge ($\alpha=10.0$)** | Prospective Operational | **1.062 ± 0.347 m** | **1.721 m** | **2.315 m** | **0.892 m** | -1.012 m |
-| **Prospective Random Forest (depth=2)** | Prospective Operational | 1.101 ± 0.320 m | 1.730 m | 2.306 m | 0.912 m | -0.981 m |
-| **Prospective Parsimonious Ensemble** | Prospective Blend | 1.079 ± 0.331 m | 1.726 m | 2.310 m | 0.902 m | -0.997 m |
-| **Retrospective Gradient Boosting** | Retrospective Diagnostic | N/A | 1.779 m | 2.279 m | 0.825 m | -0.716 m |
-| **Physical RK4 Ballistic ($h=2.0$ m)** | Mechanistic Physical | N/A | 7.921 m | 8.922 m | 7.921 m | +7.921 m |
-| **Physical RK4 Ballistic ($h=1.0$ m)** | Mechanistic Physical | N/A | 3.208 m | 4.176 m | 3.006 m | +3.006 m |
-
-* **Prospective Models:** Rely solely on pre-flight observable quantities (wind speed, wind speed², fuel category).
-* **Retrospective Models:** Include post-landing recovered particle mass and projected area. **Must not be advertised as forward-looking operational predictors.**
-* **Detailed Scientific Comparison:** See [`reports/MODEL_IMPROVEMENT_COMPARISON.md`](file:///Users/heroofhumanity/Projects%20VS%20code/model%20for%20save_the_earth/reports/MODEL_IMPROVEMENT_COMPARISON.md).
-
----
-
-## 🔬 Statistically Reconstructed Distribution Benchmark (JFSP 15-1-04-4 Moments)
-
-In addition to run-level median benchmarks, models are evaluated against an **8,841-particle held-out test distribution** reconstructed from the empirical summary moments published in the USDA JFSP 15-1-04-4 experiments across strictly unseen fuel groups (`corner_cedar_osb`, `recycled_shake_roof`, `mockup_fibercement_combustible`):
-
-| Model Category | Model Name | Held-Out Test MAE (m) | RMSE (m) | Median AE (m) | Signed Bias (m) | Throughput (particles/s) |
-|---|---|---:|---:|---:|---:|---:|
-| **Baseline** | Global Median Baseline | 5.161 | 8.512 | 2.132 | -4.492 | N/A |
-| **Statistical (Operational)** | **Prospective Ridge** | **4.689** | **7.556** | 2.683 | -2.558 | > 1,000,000 |
-| **Statistical (Operational)** | Prospective Gradient Boosting | 4.875 | 7.859 | **2.657** | -2.941 | ~450,000 |
-| **Statistical (Operational)** | Prospective Random Forest | 4.890 | 7.866 | 2.664 | -2.930 | ~350,000 |
-| **Deep Learning Surrogate** | Model B: Neural Surrogate (Prototype) | 5.178 | 7.704 | 3.420 | -1.752 | **733,756** |
-| **Mechanistic Aerodynamics** | Mechanistic RK4 Integration | 5.577 | 8.760 | 3.335 | -1.507 | 449 |
-| **Physics-Informed Hybrid** | Model C: Hybrid Surrogate (Fixed) | 6.302 | 8.262 | 5.055 | +1.453 | > 950,000 |
-| *Theoretical Reference* | *Oracle Constant Predictor (Median)* | *4.800* | *7.230* | *2.300* | *0.000* | *N/A* |
-
-*Note: In the test set, the empirical landing distance standard deviation is $\sigma = 7.23$ m, and a simple constant median predictor achieves an MAE of 4.80 m on this scatter. Conditional models with informative features can narrow this interval, but individual particle trajectories in turbulent flow require probabilistic interval prediction ($q_{10}-q_{90}$) rather than deterministic point estimates.*
-
-* **Comprehensive Acquisition Audit:** See [`reports/REAL_DATA_ACQUISITION.md`](file:///Users/heroofhumanity/Projects%20VS%20code/model%20for%20save_the_earth/reports/REAL_DATA_ACQUISITION.md).
-* **Validation Methodology & Physical Analysis:** See [`reports/INDEPENDENT_MODEL_VALIDATION.md`](file:///Users/heroofhumanity/Projects%20VS%20code/model%20for%20save_the_earth/reports/INDEPENDENT_MODEL_VALIDATION.md).
-* **Machine-Readable Provenance Registry:** See [`data/manifests/external_validation_sources.json`](file:///Users/heroofhumanity/Projects%20VS%20code/model%20for%20save_the_earth/data/manifests/external_validation_sources.json).
-
----
-
-## 📁 Repository Structure
-
-```text
-├── run_pipeline.py                  # Single-command end-to-end master orchestration pipeline
-├── ember_simulation.py              # Mechanistic 4th-order Runge-Kutta ballistic simulator
-├── physics_sensitivity.py           # Aerodynamic sensitivity analysis (release height & ground shear)
-├── parse_usda_report_tables.py      # Automated table extractor for USDA JFSP 15-1-04-4
-├── build_canonical_datasets.py      # Standardized SI-unit dataset builder
-├── research_data.py                 # Cryptographic QC auditor & group-disjoint partitioner
-├── train_distance_benchmarks.py     # 5-fold Group CV and benchmark training suite
-├── generate_diagnostics.py          # Diagnostic figure and publication table generator
-├── inspect_raw.py                   # Raw archive and checksum auditor
-├── src/save_the_earth/
-│   ├── data/
-│   │   ├── openptv.py               # OpenPTV 3D trajectory loader & track reconstructor
-│   │   └── usda_particles.py        # USDA particle-level benchmark dataset constructor
-│   ├── evaluation/
-│   │   ├── evaluate_trajectories.py # Trajectory benchmark on synthetic & run data
-│   │   ├── evaluate_usda_particles.py # 60,370 particle-level experimental benchmark
-│   │   └── openptv_validation.py    # OpenPTV experimental velocity validation
-│   ├── models/                      # Neural and Hybrid trajectory surrogates (Model B & C)
-│   ├── physics/                     # Advanced 3D aerodynamics ODE engine (RK4)
-│   ├── simulation/                  # 10k physical trajectory generator
-│   └── interfaces/                  # Modular scientific interfaces for 6 research domains
-├── data/
-│   ├── manifests/
-│   │   ├── source_registry.json     # Provenance ledger of all research datasets
-│   │   ├── external_validation_sources.json # Audit of external validation sources
-│   │   ├── usda_particles_manifest.json # Manifest of 60,370 firebrand particles
-│   │   ├── checksums.sha256         # SHA-256 integrity checksums for all raw files
-│   │   └── split_v1.csv             # Frozen, group-disjoint train/val/test split
-│   ├── processed/
-│   │   ├── usda_individual_firebrands.csv  # 60,370 particle-level experimental records
-│   │   ├── openptv_reconstructed_tracks.csv # Reconstructed 3D experimental tracks
-│   │   ├── canonical_particle_distance.csv # Verified SI-unit experimental runs (69 runs)
-│   │   ├── canonical_firebrand_flux.csv    # Zenodo 4837617 acoustic arrival events
-│   │   └── jfsp_experiments_summary.csv   # Extracted 69 runs with full moments
-│   └── interim/                     # Quality-control audited and eligible views
-├── distance_results/
-│   ├── benchmark_comparison.json    # Exact metrics for all evaluated models
-│   ├── group_cv_metrics.csv         # 5-fold Group Cross-Validation leaderboard
-│   ├── metrics_table.csv            # Summary metrics table
-│   ├── physics_sensitivity.json     # Aerodynamic sensitivity analysis results
-│   └── test_predictions.csv        # Per-record predictions on held-out test set
-├── reports/
-│   ├── REAL_DATA_ACQUISITION.md     # Audit of external repositories (USDA, EIDC, OpenPTV, CSIRO)
-│   ├── INDEPENDENT_MODEL_VALIDATION.md # Independent particle-level validation report
-│   ├── OPENPTV_EXPERIMENTAL_VALIDATION.md # OpenPTV 3D tracking validation report
-│   ├── TRAJECTORY_TRAINING_10K.md   # 10k physical trajectory training report
-│   ├── TECHNICAL_REPORT.md          # Comprehensive scientific technical report (v2.0)
-│   ├── MODEL_IMPROVEMENT_COMPARISON.md # Side-by-side v1.0 vs v1.1 vs v2.0 comparison
-│   ├── dataset_card.md              # Dataset card detailing provenance & measurements
-│   ├── model_card.md                # Model card detailing feature scope & limitations
-│   └── figures/                     # Diagnostic figures (dispersion, model comparisons, wind trends)
-└── tests/                           # 45 automated unit and integrity tests
-```
-
----
-
-## 🧪 Automated Testing
-Run the complete unit test suite with:
-```bash
-python3 -m unittest discover -s tests -v
-```
-All 45 unit tests verify group leakage prevention, physical conservation laws, domain interface schemas, frozen checkpoint integrity, OpenPTV track reconstruction, and particle benchmark consistency without error.
+**This GitHub repository supplies technical context and preliminary evidence.** The official KAIST application, team identities, approvals, verified travel budget and external appointments will be handled by the team separately.
