@@ -5,9 +5,9 @@
 **Research Branch:** `feature/independent-experimental-validation`  
 **Status:** Validated Against Statistically Reconstructed Distribution Benchmarks  
 **Artifacts Generated:**  
-- Figures: [`reports/figures/`](file:///Users/heroofhumanity/Projects%20VS%20code/model%20for%20save_the_earth/reports/figures)  
-- Metrics Record: [`reports/usda_particle_evaluation_metrics.json`](file:///Users/heroofhumanity/Projects%20VS%20code/model%20for%20save_the_earth/reports/usda_particle_evaluation_metrics.json)  
-- Provenance Registry: [`data/manifests/external_validation_sources.json`](file:///Users/heroofhumanity/Projects%20VS%20code/model%20for%20save_the_earth/data/manifests/external_validation_sources.json)
+- Figures: [`reports/figures/`](figures)  
+- Metrics Record: [`reports/usda_particle_evaluation_metrics.json`](usda_particle_evaluation_metrics.json)  
+- Provenance Registry: [`data/manifests/external_validation_sources.json`](../data/manifests/external_validation_sources.json)
 
 ---
 
@@ -104,7 +104,7 @@ To address this limitation directly, we developed **Model E (`ExperimentalDistan
 3. **Probabilistic Output & Conformal Calibration (CQR):** Rather than issuing a fragile point prediction for chaotic turbulent ember transport, Model E outputs 80% landing bounds $[q_{10}, q_{90}]$. On independent validation data, coverage is **75.4%**. When transferred to unseen test fuel assemblies (`corner_cedar_osb`, `recycled_shake_roof`, `mockup_fibercement_combustible`), raw coverage drops to **60.1%** due to structural fuel domain shift. Applying Conformalized Quantile Regression (CQR, Romano et al. 2019) calibrated on validation residuals shifts the interval by $\pm 0.167$ m, improving test coverage to **63.4%**.
 
 ### 3.5 Systematic Physical Ablation Study (Aerodynamics & Combustion Mechanisms)
-To isolate the physical impact of newly added mechanisms from Tohidi & Kaye (2017), Wong et al. (CSIRO 2026), and Albini (1979), we executed a controlled factorial ablation study across 3 particle morphologies, 3 wind regimes, and 2 detachment heights ([`reports/physics_ablation_results.json`](file:///Users/heroofhumanity/Projects%20VS%20code/model%20for%20save_the_earth/reports/physics_ablation_results.json)):
+To isolate the physical impact of newly added mechanisms from Tohidi & Kaye (2017), Wong et al. (CSIRO 2026), and Albini (1979), we executed a controlled factorial ablation study across 3 particle morphologies, 3 wind regimes, and 2 detachment heights ([`reports/physics_ablation_results.json`](physics_ablation_results.json)):
 
 | Configuration | Description | Mean Distance Shift | Max Distance Shift | Flight Time Shift |
 |---|---|---:|---:|---:|
@@ -152,18 +152,18 @@ To isolate the physical impact of newly added mechanisms from Tohidi & Kaye (201
 
 ## 6. Diagnostic Figures
 
-The updated, verified diagnostic plots are in [`reports/figures/`](file:///Users/heroofhumanity/Projects%20VS%20code/model%20for%20save_the_earth/reports/figures):
+The updated, verified diagnostic plots are in [`reports/figures/`](figures):
 
 1. **Particle Dispersion by Fuel Family:**  
-   [`reports/figures/usda_particle_dispersion_by_fuel.png`](file:///Users/heroofhumanity/Projects%20VS%20code/model%20for%20save_the_earth/reports/figures/usda_particle_dispersion_by_fuel.png)  
+   [`reports/figures/usda_particle_dispersion_by_fuel.png`](figures/usda_particle_dispersion_by_fuel.png)  
    *Distribution of 51,121 structural vs 9,249 vegetative firebrands, illustrating the empirical scatter ($\sigma = 7.23$ m).*
 
 2. **Model Comparison on Held-Out Test Particles:**  
-   [`reports/figures/usda_model_comparison_particle_mae.png`](file:///Users/heroofhumanity/Projects%20VS%20code/model%20for%20save_the_earth/reports/figures/usda_model_comparison_particle_mae.png)  
+   [`reports/figures/usda_model_comparison_particle_mae.png`](figures/usda_model_comparison_particle_mae.png)  
    *Clean linear-scale bar chart showing all 7 models tightly clustering between 4.69 m and 6.30 m, with the oracle theoretical dispersion floor (4.80 m).*
 
 3. **Prediction Error by Wind Speed:**  
-   [`reports/figures/usda_error_by_wind_speed.png`](file:///Users/heroofhumanity/Projects%20VS%20code/model%20for%20save_the_earth/reports/figures/usda_error_by_wind_speed.png)  
+   [`reports/figures/usda_error_by_wind_speed.png`](figures/usda_error_by_wind_speed.png)  
    *Error progression across 5.36 m/s, 11.17 m/s, and 17.88 m/s wind tunnel flows.*
 
 ---
