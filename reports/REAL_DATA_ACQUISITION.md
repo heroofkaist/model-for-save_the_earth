@@ -4,7 +4,7 @@
 **Date:** November 2026  
 **Research Branch:** `feature/independent-experimental-validation`  
 **Status:** Complete Experimental Audit & Benchmark Ingestion  
-**Provenance Registry:** [`data/manifests/external_validation_sources.json`](file:///Users/heroofhumanity/Projects%20VS%20code/model%20for%20save_the_earth/data/manifests/external_validation_sources.json)
+**Provenance Registry:** [`data/manifests/external_validation_sources.json`](../data/manifests/external_validation_sources.json)
 
 ---
 
@@ -54,7 +54,7 @@ We probed the canonical digital repositories for the two primary archives:
 ### 2.3 Scientific Nature of the Ingested Benchmark: Statistical Reconstructed Distribution
 > [!IMPORTANT]
 > **Scientific Integrity Clarification: Statistical Reconstructed Distribution vs. Raw Sensor Observations**  
-> Because the direct particle catch tables at `www.fs.usda.gov` are protected by Azure WAF (403), the particle benchmark in [`src/save_the_earth/data/usda_particles.py`](file:///Users/heroofhumanity/Projects%20VS%20code/model%20for%20save_the_earth/src/save_the_earth/data/usda_particles.py) is a **synthetic parametric distribution reconstruction (moment-matched via multivariate Gaussian copula)**. It is **NOT** a collection of raw physical particle sensor logs.
+> Because the direct particle catch tables at `www.fs.usda.gov` are protected by Azure WAF (403), the particle benchmark in [`src/save_the_earth/data/usda_particles.py`](../src/save_the_earth/data/usda_particles.py) is a **synthetic parametric distribution reconstruction (moment-matched via multivariate Gaussian copula)**. It is **NOT** a collection of raw physical particle sensor logs.
 > 
 > The evaluation metrics on this benchmark reflect **model consistency with the empirical joint statistical distributions** published in the USDA final report, **not** prediction accuracy on individual physically caught embers.
 
@@ -118,7 +118,7 @@ Lagrangian Particle Classes:
 - **Repository:** `https://github.com/OpenPTV/2_cam_firebrands.git` (Commit: `2f45dcf`)
 - **Institution:** University of Maryland / NIST Fire Research Division
 - **Method:** 3D Particle Tracking Velocimetry (3D-PTV) using stereoscopic cameras viewing a small downstream observation window.
-- **Pipeline Implementation:** Implemented in [`src/save_the_earth/data/openptv.py`](file:///Users/heroofhumanity/Projects%20VS%20code/model%20for%20save_the_earth/src/save_the_earth/data/openptv.py) and inspected in [`src/save_the_earth/evaluation/openptv_validation.py`](file:///Users/heroofhumanity/Projects%20VS%20code/model%20for%20save_the_earth/src/save_the_earth/evaluation/openptv_validation.py).
+- **Pipeline Implementation:** Implemented in [`src/save_the_earth/data/openptv.py`](../src/save_the_earth/data/openptv.py) and inspected in [`src/save_the_earth/evaluation/openptv_validation.py`](../src/save_the_earth/evaluation/openptv_validation.py).
 - **Observed Characteristics:**
   - 247 3D particle detections across frames 303 to 308.
   - 68 reciprocal-linked multi-frame tracks.
@@ -156,7 +156,7 @@ Lagrangian Particle Classes:
 ## 6. Machine-Readable Provenance Registry
 
 All investigated sources, DOIs, URLs, checksums, access statuses, and limitations are codified in:
-👉 [`data/manifests/external_validation_sources.json`](file:///Users/heroofhumanity/Projects%20VS%20code/model%20for%20save_the_earth/data/manifests/external_validation_sources.json)
+👉 [`data/manifests/external_validation_sources.json`](../data/manifests/external_validation_sources.json)
 
 ```json
 {

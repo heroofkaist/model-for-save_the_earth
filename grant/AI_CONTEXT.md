@@ -3,9 +3,9 @@
 **Read this first.** This document is a factual orientation for a future AI writing assistant and the four-person KAIST team. It is **not** the final application, a host invitation, or a claim of completed experimental 3D validation.
 
 **Repository:** [heroofkaist/model-for-save_the_earth](https://github.com/heroofkaist/model-for-save_the_earth)  
-**Context snapshot:** 2026-11-03; factual evidence checked against `main` at `f447d933f5` before this documentation branch.  
+**Context snapshot:** 2026-11-03; evidence values originate from the checked-in scientific reports and metrics. Recheck the current `main` when preparing the official application.  
 **Program:** teamKAIST *Save the Earth* Global Challenge (overseas expedition). **Verify all eligibility, deadline, format, and budget rules against the official announcement and application attachments before submission.**  
-**Team:** Four KAIST students. Their actual names, majors, contributions, roles, and approvals must come from the team, **not** the illustrative roles in the draft itinerary.
+**Team:** Four KAIST students. Their actual names, majors, contributions, roles, and approvals must come from the team. No earlier speculative itinerary or biography should be reused as a verified fact.
 
 ## 1. The central story
 
