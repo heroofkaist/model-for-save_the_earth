@@ -52,11 +52,21 @@ When evaluating our deep experimental surrogate (`Model E`, `ExperimentalDistanc
 The test set consists strictly of unseen structural assemblies (`corner_cedar_osb`, `recycled_shake_roof`, `mockup_fibercement_combustible`). These assemblies release heavier, larger embers that shatter or catch higher winds, shifting the landing distribution outward relative to standard vegetative fuels.
 
 ### Consequence:
-Static quantile networks suffer from domain shift when applied across heterogeneous fuel types. This proves that future models must incorporate **fuel-specific hierarchical priors** rather than a single homogeneous network.
+Static quantile networks suffer from severe domain shift when applied across heterogeneous fuel types. The uncertainty calibration cannot be described as successful: achieving only 63.4% coverage against a nominal 80% confidence level indicates substantial under-coverage. This proves that future models must incorporate **fuel-specific hierarchical priors and non-exchangeable conformal methods** rather than a single homogeneous network.
 
 ---
 
-## 5. Boundary 4: Lumped Phenomenological Formulations
+## 5. Boundary 4: Clarification on Error Baselines vs. Theoretical Limits
+
+### Description:
+In earlier exploratory analyses, a reference error of ~4.8 meters was occasionally cited. We explicitly clarify that **4.8 m is an unconditional sample median baseline, NOT a fundamental or irreducible MAE lower bound**.
+
+### Operational Reality:
+When conditioned on pre-flight wind speed and fuel classification, our prospective models achieve a 5-fold cross-validation MAE of **0.995 m** (and a held-out test MAE of **1.763 m**). The remaining error is governed by unmeasured initial conditions (detachment height $h$, ejection angle) and chaotic 6-DOF flutter, which require experimental tracking rather than purely statistical post-processing.
+
+---
+
+## 6. Boundary 5: Lumped Phenomenological Formulations
 
 ### Description:
 In `src/save_the_earth/physics/aerodynamics.py`:
@@ -66,6 +76,7 @@ In `src/save_the_earth/physics/aerodynamics.py`:
 
 ---
 
-## 6. Summary: The Experimental Necessity
+## 7. Summary: The Experimental Necessity
 
-These limitations cannot be resolved by writing more code or generating more synthetic neural network weights. **They require empirical in-flight 3D measurements of burning embers under controlled vertical and horizontal flow fields.** This directly motivates our collaborative expedition to the CSIRO Bushfire Research Laboratory.
+These limitations cannot be resolved by writing more code or generating more synthetic neural network weights. **They require empirical in-flight 3D measurements of burning embers under controlled vertical and horizontal flow fields.** This directly motivates our prospective research expedition to Australia (seeking consultation with bushfire researchers at CSIRO, UNSW Canberra, and the University of Melbourne) to bridge our computational framework with direct experimental methods and realistic fuel morphology data.
+
