@@ -45,7 +45,7 @@ class TestExperimentalSurrogate(unittest.TestCase):
             "projected_area_m2": "0.0005",
         }
         feats = extract_features(sample_row)
-        self.assertEqual(len(feats), 10)
+        self.assertEqual(len(feats), 12)
         self.assertAlmostEqual(feats[0], 6.0)
         self.assertAlmostEqual(feats[1], 36.0)
         self.assertEqual(feats[5], 1.0)  # is_structural

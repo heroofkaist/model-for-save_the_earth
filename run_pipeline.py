@@ -125,20 +125,22 @@ def run_predict(wind, category, moisture=None):
         try:
             import torch
             from src.save_the_earth.models.experimental_surrogate import ExperimentalDistanceNet
+            from src.save_the_earth.training.train_experimental_surrogate import extract_features as extract_e_features
             chk_e = torch.load(checkpoint_e_path, map_location="cpu", weights_only=False)
-            m_e = ExperimentalDistanceNet(in_dim=10, hidden_dim=128, dropout=0.0)
+            dim_e = len(chk_e["mean_x"])
+            m_e = ExperimentalDistanceNet(in_dim=dim_e, hidden_dim=128, dropout=0.0)
             m_e.load_state_dict(chk_e["model_state_dict"])
             m_e.eval()
 
-            u = wind
-            gust = wind
-            moist = moisture if moisture is not None else 10.0
-            is_struct = 1.0 if category == "structural" else 0.0
-            m = 5e-5
-            a = 2e-4
-            am = a / m
-            dryness = np.exp(-moist / 20.0)
-            raw_feat = np.array([[u, u**2, gust, moist, dryness, is_struct, np.log(m), np.log(a), np.log(am), u**2 * dryness]], dtype=np.float32)
+            sample_r = {
+                "wind_speed_m_s": wind,
+                "gust_peak_m_s": wind,
+                "moisture_content_percent": moisture if moisture is not None else 10.0,
+                "fuel_category": category,
+                "mass_kg": 5e-5,
+                "projected_area_m2": 2e-4
+            }
+            raw_feat = np.array([extract_e_features(sample_r)], dtype=np.float32)
             norm_feat = (raw_feat - chk_e["mean_x"]) / chk_e["std_x"]
             with torch.no_grad():
                 preds_e = m_e(torch.from_numpy(norm_feat)).numpy()[0]
