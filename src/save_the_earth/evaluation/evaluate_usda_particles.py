@@ -366,7 +366,8 @@ def main():
     print("Evaluating Model E (Deep Experimental Surrogate)...")
     t0_e = time.time()
     checkpoint_e = torch.load(CHECKPOINT_E, map_location="cpu", weights_only=False)
-    model_e = ExperimentalDistanceNet(in_dim=10, hidden_dim=128, dropout=0.08)
+    dim_e = len(checkpoint_e["mean_x"])
+    model_e = ExperimentalDistanceNet(in_dim=dim_e, hidden_dim=128, dropout=0.08)
     model_e.load_state_dict(checkpoint_e["model_state_dict"])
     model_e.eval()
 

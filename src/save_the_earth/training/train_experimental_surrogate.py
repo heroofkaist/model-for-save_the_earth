@@ -22,6 +22,11 @@ import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader
 
 from src.save_the_earth.models.experimental_surrogate import ExperimentalDistanceNet
+from src.save_the_earth.physics.aerodynamics import (
+    compute_tohidi_drag_lift,
+    compute_combustion_buoyancy,
+    DEFAULT_RHO
+)
 
 DATA_PATH = PROJECT_ROOT / "data" / "processed" / "usda_individual_firebrands.csv"
 CHECKPOINT_DIR = PROJECT_ROOT / "checkpoints"
@@ -46,7 +51,19 @@ def extract_features(row):
     dryness = np.exp(-moist / 20.0)
     wind_momentum = u_sq * dryness
 
-    return [u, u_sq, gust, moist, dryness, is_struct, log_m, log_a, log_am, wind_momentum]
+    # Tohidi & Kaye (2017) morphology aerodynamics + Wong et al. (CSIRO 2026) combustion buoyancy
+    cd_tohidi, _ = compute_tohidi_drag_lift(m, a)
+    g_eff = compute_combustion_buoyancy(is_burning=True, eta_buoy=1.18)
+    w_term = np.sqrt(2.0 * m * g_eff / max(1e-7, DEFAULT_RHO * cd_tohidi * a))
+    x_advect = u * (1.22 / max(0.2, w_term))
+    log_w_term = np.log(max(0.1, w_term))
+    log_advect = np.log(max(0.1, x_advect))
+
+    return [
+        u, u_sq, gust, moist, dryness, is_struct,
+        log_m, log_a, log_am, wind_momentum,
+        log_w_term, log_advect
+    ]
 
 
 def pinball_loss(preds: torch.Tensor, targets: torch.Tensor, quantiles=[0.1, 0.5, 0.9]) -> torch.Tensor:
@@ -139,7 +156,8 @@ def train_model(
                 "std_x": std_x,
                 "feature_names": [
                     "u", "u_sq", "gust", "moist", "dryness",
-                    "is_structural", "log_m", "log_a", "log_am", "wind_momentum"
+                    "is_structural", "log_m", "log_a", "log_am", "wind_momentum",
+                    "log_w_term", "log_advect"
                 ]
             }, CHECKPOINT_PATH)
 
