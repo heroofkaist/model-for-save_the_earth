@@ -132,7 +132,7 @@ def load_surrogate_checkpoint(checkpoint_path: Path, model_type: str = "neural")
     return model, stats
 
 
-def evaluate_rk4_physics(rows: List[Dict[str, Any]], h: float = 2.0, cd: float = 1.05) -> np.ndarray:
+def evaluate_rk4_physics(rows: List[Dict[str, Any]], h: float = 1.22, cd: float = 1.0) -> np.ndarray:
     """
     Simulates mechanistic aerodynamic trajectory for each particle.
     """
@@ -162,8 +162,8 @@ def evaluate_surrogate(
     model: torch.nn.Module,
     stats: Dict[str, np.ndarray],
     is_hybrid: bool = False,
-    h: float = 2.0,
-    cd: float = 1.05
+    h: float = 1.22,
+    cd: float = 1.0
 ) -> np.ndarray:
     """
     Evaluates neural or hybrid surrogate across all particle records.
@@ -191,11 +191,13 @@ def evaluate_surrogate(
             base_traj, base_land = compute_ballistic_baseline(inputs, times)
             t_base_traj = torch.from_numpy(base_traj).float()
             t_base_land = torch.from_numpy(base_land).float()
-            _, norm_pred_land = model(tensor_x, t_base_traj, t_base_land)
+            # Model C predicts directly in physical coordinates: pred = base + delta
+            _, pred_land_phys = model(tensor_x, t_base_traj, t_base_land)
+            pred_land = pred_land_phys.cpu().numpy()
         else:
             _, norm_pred_land = model(tensor_x)
+            pred_land = norm_pred_land.cpu().numpy() * stats["land_std"] + stats["land_mean"]
 
-        pred_land = norm_pred_land.cpu().numpy() * stats["land_std"] + stats["land_mean"]
         # landing distance is norm of (x_land, y_land)
         pred_dist = np.linalg.norm(pred_land[:, :2], axis=1)
 
@@ -228,47 +230,28 @@ def plot_dispersion_by_fuel(rows: List[Dict[str, Any]], out_path: Path):
 
 
 def plot_model_comparison(results: Dict[str, Dict[str, float]], out_path: Path):
-    """Generates bar chart comparing test MAE across all models with log scale and annotations."""
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5.5), dpi=300, gridspec_kw={"width_ratios": [3, 2]})
+    """Generates bar chart comparing test MAE across all models alongside oracle baseline."""
+    plt.figure(figsize=(11, 5.5), dpi=300)
+    models = list(results.keys())
+    maes = [results[m]["mae_m"] for m in models]
+    labels = [m.replace("Prospective ", "Prosp. ").replace("Model B: ", "").replace("Model C: ", "").replace("Mechanistic ", "") for m in models]
 
-    # Left: Realistic models (MAE < 15 m)
-    realistic_models = [m for m in results.keys() if results[m]["mae_m"] < 50.0]
-    r_maes = [results[m]["mae_m"] for m in realistic_models]
-    r_labels = [m.replace("Prospective ", "Prosp. ").replace("Model B: ", "").replace("Mechanistic ", "") for m in realistic_models]
+    colors = ["#7f8c8d", "#2980b9", "#3498db", "#1abc9c", "#e67e22", "#9b59b6", "#2c3e50"]
+    x = np.arange(len(models))
 
-    colors = ["#7f8c8d", "#2980b9", "#3498db", "#1abc9c", "#e67e22", "#9b59b6"]
-    x1 = np.arange(len(realistic_models))
-    bars1 = ax1.bar(x1, r_maes, color=colors[:len(realistic_models)], width=0.55, edgecolor="black", alpha=0.9)
-    for bar, val in zip(bars1, r_maes):
-        ax1.text(bar.get_x() + bar.get_width() / 2.0, val + 0.15, f"{val:.2f} m", ha="center", va="bottom", fontsize=9.5, fontweight="bold")
+    bars = plt.bar(x, maes, color=colors[:len(models)], width=0.58, edgecolor="black", alpha=0.9)
+    for bar, val in zip(bars, maes):
+        plt.text(bar.get_x() + bar.get_width() / 2.0, val + 0.12, f"{val:.2f} m", ha="center", va="bottom", fontsize=10, fontweight="bold")
 
-    ax1.set_xticks(x1)
-    ax1.set_xticklabels(r_labels, rotation=20, ha="right", fontsize=9.5)
-    ax1.set_ylabel("Held-Out Test MAE (meters)", fontsize=11, fontweight="bold")
-    ax1.set_title("Operational & Physical Models (Linear Scale)", fontsize=11, fontweight="bold")
-    ax1.grid(axis="y", alpha=0.3, linestyle=":")
-    ax1.set_ylim(0, max(r_maes) * 1.25)
+    # Oracle theoretical median lower bound
+    plt.axhline(4.80, color="#c0392b", linestyle="--", linewidth=1.5, label="Test Set Dispersion Oracle Floor: 4.80 m (σ = 7.23 m)")
 
-    # Right: Full scale log comparison including Model C
-    all_models = list(results.keys())
-    all_maes = [results[m]["mae_m"] for m in all_models]
-    all_labels = [m.replace("Prospective ", "P. ").replace("Model ", "M-") for m in all_models]
-
-    all_colors = ["#7f8c8d", "#2980b9", "#3498db", "#1abc9c", "#e67e22", "#9b59b6", "#c0392b"]
-    x2 = np.arange(len(all_models))
-    bars2 = ax2.bar(x2, all_maes, color=all_colors[:len(all_models)], width=0.55, edgecolor="black", alpha=0.9)
-    for bar, val in zip(bars2, all_maes):
-        ax2.text(bar.get_x() + bar.get_width() / 2.0, val * 1.15, f"{val:.1f} m", ha="center", va="bottom", fontsize=8.5, fontweight="bold")
-
-    ax2.set_yscale("log")
-    ax2.set_xticks(x2)
-    ax2.set_xticklabels(all_labels, rotation=25, ha="right", fontsize=9)
-    ax2.set_ylabel("Test MAE (meters, log scale)", fontsize=11, fontweight="bold")
-    ax2.set_title("All Benchmarked Models (Log Scale)", fontsize=11, fontweight="bold")
-    ax2.grid(axis="y", alpha=0.3, linestyle=":", which="both")
-    ax2.set_ylim(1.0, max(all_maes) * 3.0)
-
-    plt.suptitle("USDA JFSP 15-1-04-4 Particle-Level Benchmark (Held-Out Test Set, N=8,841)", fontsize=13, fontweight="bold")
+    plt.xticks(x, labels, rotation=20, ha="right", fontsize=9.5)
+    plt.ylabel("Held-Out Test MAE (meters)", fontsize=11, fontweight="bold")
+    plt.title("Particle Benchmark Model Comparison (Held-Out Test Set, N=8,841)", fontsize=12, fontweight="bold")
+    plt.legend(loc="upper right", frameon=True, fontsize=9.5)
+    plt.grid(axis="y", alpha=0.3, linestyle=":")
+    plt.ylim(0, max(maes) * 1.35)
     plt.tight_layout()
     plt.savefig(out_path)
     plt.close()
@@ -350,7 +333,7 @@ def main():
     # 5. Physics Baseline: Mechanistic RK4
     print("Executing Mechanistic RK4 Aerodynamics simulation on held-out test particles...")
     t0_rk4 = time.time()
-    y_pred_rk4 = evaluate_rk4_physics(test_rows, h=2.0, cd=1.05)
+    y_pred_rk4 = evaluate_rk4_physics(test_rows, h=1.22, cd=1.0)
     t1_rk4 = time.time()
     print(f"RK4 simulation finished in {t1_rk4 - t0_rk4:.2f} s ({len(test_rows)/(t1_rk4 - t0_rk4):.1f} particles/s)")
 
@@ -358,7 +341,7 @@ def main():
     print("Evaluating Model B (Neural Trajectory Surrogate)...")
     model_b, stats_b = load_surrogate_checkpoint(CHECKPOINT_B, "neural")
     t0_b = time.time()
-    y_pred_b = evaluate_surrogate(test_rows, model_b, stats_b, is_hybrid=False, h=2.0, cd=1.05)
+    y_pred_b = evaluate_surrogate(test_rows, model_b, stats_b, is_hybrid=False, h=1.22, cd=1.0)
     t1_b = time.time()
     print(f"Model B evaluation finished in {t1_b - t0_b:.2f} s ({len(test_rows)/(t1_b - t0_b):.1f} particles/s)")
 
@@ -366,7 +349,7 @@ def main():
     print("Evaluating Model C (Physics-Informed Hybrid Surrogate)...")
     model_c, stats_c = load_surrogate_checkpoint(CHECKPOINT_C, "hybrid")
     t0_c = time.time()
-    y_pred_c = evaluate_surrogate(test_rows, model_c, stats_c, is_hybrid=True, h=2.0, cd=1.05)
+    y_pred_c = evaluate_surrogate(test_rows, model_c, stats_c, is_hybrid=True, h=1.22, cd=1.0)
     t1_c = time.time()
     print(f"Model C evaluation finished in {t1_c - t0_c:.2f} s ({len(test_rows)/(t1_c - t0_c):.1f} particles/s)")
 

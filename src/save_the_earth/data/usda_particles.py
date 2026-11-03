@@ -1,16 +1,17 @@
 """
-Save the Earth — USDA JFSP 15-1-04-4 Particle-Level Dataset Pipeline.
+Save the Earth — USDA JFSP 15-1-04-4 Statistically Reconstructed Particle Benchmark.
 
-Constructs, manages, and validates particle-level observational benchmarks
-for firebrand transport and landing distance from the USDA Forest Service
-Joint Fire Science Program (JFSP) Project 15-1-04-4 experiments (Hedayati et al.).
+Generates a synthetic, moment-matched firebrand particle distribution based on the
+empirical summary statistics (mean, std, skewness, sample size, cross-correlations)
+published in the USDA Forest Service Joint Fire Science Program (JFSP) Project 15-1-04-4
+final report (Hedayati et al., Appendix E, Tables 4-26).
 
-Covers:
-- Vegetative firebrands (USDA RDS-2020-0035): Conifers, shrubs, hardwood fuels.
-- Structural firebrands (USDA RDS-2020-0034): Fences, corner assemblies, shake roofs.
-
-Implements rigorous group-disjoint train/validation/test partitioning aligned
-with split_v1.csv to prevent data leakage across fuel families and test conditions.
+SCIENTIFIC PROVENANCE CLARIFICATION:
+- The records in this benchmark are SYNTHETIC SURROGATES sampled from a multivariate
+  copula with log-normal marginals to reproduce reported experimental distributions.
+- They are NOT raw sensor measurements from individual firebrand catch pans.
+- This dataset serves to evaluate whether trajectory and distance models reproduce
+  statistically reconstructed experimental distributions, not individual physical particles.
 """
 
 import csv
@@ -265,8 +266,9 @@ class USDAParticleBenchmark:
         area_vals = [p["projected_area_m2"] for p in particles]
 
         manifest = {
-            "dataset_name": "USDA JFSP 15-1-04-4 Particle-Level Benchmark",
-            "description": "Individual firebrand observations (mass, area, landing distance) across 69 wind tunnel runs",
+            "dataset_name": "USDA JFSP 15-1-04-4 Statistically Reconstructed Particle Benchmark",
+            "description": "Synthetic firebrand particle distribution reconstructed via moment-matched multivariate copula from USDA JFSP 15-1-04-4 final report statistics (Appendix E, Tables 4-26). Evaluates model consistency against reconstructed empirical distributions, not raw physical sensor catch records.",
+            "data_nature": "synthetic_statistical_reconstruction_from_experimental_moments",
             "file_name": output_path.name,
             "sha256": file_sha256,
             "file_size_bytes": file_size,
@@ -333,3 +335,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

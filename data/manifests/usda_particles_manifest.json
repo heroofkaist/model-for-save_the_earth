@@ -1,6 +1,7 @@
 {
-  "dataset_name": "USDA JFSP 15-1-04-4 Particle-Level Benchmark",
-  "description": "Individual firebrand observations (mass, area, landing distance) across 69 wind tunnel runs",
+  "dataset_name": "USDA JFSP 15-1-04-4 Statistically Reconstructed Particle Benchmark",
+  "description": "Synthetic firebrand particle distribution reconstructed via moment-matched multivariate copula from USDA JFSP 15-1-04-4 final report statistics (Appendix E, Tables 4-26). Evaluates model consistency against reconstructed empirical distributions, not raw physical sensor catch records.",
+  "data_nature": "synthetic_statistical_reconstruction_from_experimental_moments",
   "file_name": "usda_individual_firebrands.csv",
   "sha256": "b6c46b0dc0f82375ef5a055cd3a58c697175f00696e3f652978802ed148521d4",
   "file_size_bytes": 20577603,

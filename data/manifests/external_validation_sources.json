@@ -12,6 +12,7 @@
       "mendeley_doi": "10.17632/3cmtb9n9ph.2",
       "license": "CC0-1.0",
       "access_status": "blocked_by_host_waf",
+      "benchmark_data_nature": "synthetic_statistical_reconstruction_from_experimental_moments",
       "audit_result": {
         "http_code": 403,
         "error_message": "Azure Front Door WAF blocks automated HTTP user agents from downloading product archives directly from www.fs.usda.gov/rds/archive/products/RDS-2020-0035/",
@@ -23,7 +24,7 @@
         "total_test_runs": 21,
         "fuels": ["Douglas fir", "Korean pine", "Blue juniper", "Saw palmetto", "Chamise", "Loblolly pine", "Leyland cypress"],
         "observables": ["mass_kg", "projected_area_m2", "landing_distance_m", "wind_speed_m_s", "moisture_content_percent"],
-        "reconstruction_strategy": "Moment-matched multivariate lognormal copula from verified JFSP 15-1-04-4 Appendix E final report tables"
+        "reconstruction_strategy": "Moment-matched multivariate lognormal copula from verified JFSP 15-1-04-4 Appendix E final report tables (evaluates model consistency with empirical statistical distributions, not raw sensor measurements)."
       }
     },
     "usda_rds_2020_0034_structural": {
@@ -35,6 +36,7 @@
       "mendeley_doi": "10.17632/x6yww4dnm6.2",
       "license": "CC0-1.0",
       "access_status": "blocked_by_host_waf",
+      "benchmark_data_nature": "synthetic_statistical_reconstruction_from_experimental_moments",
       "audit_result": {
         "http_code": 403,
         "error_message": "Azure Front Door WAF blocks automated HTTP user agents from downloading product archives directly from www.fs.usda.gov/rds/archive/products/RDS-2020-0034/",
@@ -42,11 +44,13 @@
         "mendeley_api_status": "Dataset record exists, file list empty (files: [])"
       },
       "canonical_measurements": {
-        "total_particles": 51121,
+        "total_particles_table_sum": 51121,
+        "historical_registry_estimate": 50571,
+        "discrepancy_explanation": "Appendix E itemization yields 26,972 component particles (Tables 4-11) and 24,149 assembly particles (Tables 12-21), summing to exactly 51,121. The historical 50,571 figure derived from a 26,422 estimate for components (diff = 550 particles).",
         "total_test_runs": 48,
         "fuels": ["privacy_fence", "lattice_fence", "corner_cedar_plywood", "corner_cedar_osb", "corner_osb_osb", "recycled_shake_roof", "frt_cedar_shake_roof", "non_frt_cedar_shake_roof", "wall_roof_mockups"],
         "observables": ["mass_kg", "projected_area_m2", "landing_distance_m", "wind_speed_m_s", "moisture_content_percent"],
-        "reconstruction_strategy": "Moment-matched multivariate lognormal copula from verified JFSP 15-1-04-4 Appendix E final report tables"
+        "reconstruction_strategy": "Moment-matched multivariate lognormal copula from verified JFSP 15-1-04-4 Appendix E final report tables (evaluates model consistency with empirical statistical distributions, not raw sensor measurements)."
       }
     },
     "uk_eidc_fds_oregon": {
@@ -78,8 +82,8 @@
         "total_detections": 247,
         "total_reconstructed_tracks": 68,
         "spatial_units": "Reconstructed coordinate files rt_is.* store millimeters; converted strictly to SI meters in pipeline",
-        "temporal_resolution": "0.001 s per frame (1000 fps high-speed stereoscopic photogrammetry)",
-        "limitations": "Observation volume is limited to small near-field window (10.9 cm x 8.4 cm x 5.7 cm) over 5 milliseconds; particles do not land within camera FOV; mass and aerodynamic projected area were not recorded for individual tracked particles."
+        "temporal_resolution": "UNVERIFIED: Camera frame rate and time-step Delta t are not recorded in upstream repository files or calibration logs. Velocity cannot be independently validated without confirmed frame rate.",
+        "limitations": "Observation volume is limited to a small window (10.9 cm x 8.4 cm x 5.7 cm); embers exit camera field of view without landing; mass and projected area were not recorded for individual tracked particles; frame rate is unconfirmed."
       }
     },
     "csiro_2026_vertical_wind_tunnel": {

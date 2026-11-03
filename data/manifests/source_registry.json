@@ -54,9 +54,11 @@
       "mendeley_doi": "10.17632/x6yww4dnm6.2",
       "license_reported": "CC0-1.0",
       "record_count_reported": 50571,
+      "record_count_table_sum": 51121,
       "sub_assemblies": {
-        "structural_components": 24149,
-        "structural_wall_roof_assemblies": 26422
+        "structural_components_table_sum": 26972,
+        "structural_wall_roof_assemblies_table_sum": 24149,
+        "note_on_550_difference": "Initial metadata recorded 50,571 based on preliminary sub-assembly sums (24,149 assemblies + 26,422 components estimate). Exact itemization from Appendix E Tables 4-11 yields 26,972 components and Tables 12-21 yields 24,149 assemblies, totalling 51,121 structural particles (a difference of exactly 550 particles in the components sum)."
       },
       "raw_ingested": true,
       "ingested_files": [

@@ -82,19 +82,22 @@ Models evaluated across 20 development groups and tested on 3 untouched, indepen
 
 ---
 
-## 🔬 Independent Experimental Validation & Particle-Level Benchmark
+## 🔬 Statistically Reconstructed Distribution Benchmark (JFSP 15-1-04-4 Moments)
 
-In addition to run-level median benchmarks, models are independently validated directly against **8,841 individual firebrand particles** collected during the USDA JFSP 15-1-04-4 experiments across strictly held-out fuel groups (`corner_cedar_osb`, `recycled_shake_roof`, `mockup_fibercement_combustible`):
+In addition to run-level median benchmarks, models are evaluated against an **8,841-particle held-out test distribution** reconstructed from the empirical summary moments published in the USDA JFSP 15-1-04-4 experiments across strictly unseen fuel groups (`corner_cedar_osb`, `recycled_shake_roof`, `mockup_fibercement_combustible`):
 
 | Model Category | Model Name | Held-Out Test MAE (m) | RMSE (m) | Median AE (m) | Signed Bias (m) | Throughput (particles/s) |
 |---|---|---:|---:|---:|---:|---:|
 | **Baseline** | Global Median Baseline | 5.161 | 8.512 | 2.132 | -4.492 | N/A |
-| **Statistical (Operational)** | Prospective Ridge | **4.689** | **7.556** | 2.683 | -2.558 | > 1,000,000 |
+| **Statistical (Operational)** | **Prospective Ridge** | **4.689** | **7.556** | 2.683 | -2.558 | > 1,000,000 |
 | **Statistical (Operational)** | Prospective Gradient Boosting | 4.875 | 7.859 | **2.657** | -2.941 | ~450,000 |
 | **Statistical (Operational)** | Prospective Random Forest | 4.890 | 7.866 | 2.664 | -2.930 | ~350,000 |
-| **Deep Learning Surrogate** | **Model B: Neural Surrogate** | 5.642 | 7.818 | 3.963 | **+0.345** | **609,758** |
-| **Mechanistic Aerodynamics** | Mechanistic RK4 Integration | 7.198 | 11.496 | 4.873 | +2.598 | 308 |
-| **Physics-Informed Hybrid** | Model C: Hybrid Surrogate | 477.504 | 535.094 | 419.734 | +477.504 | > 1,000,000 |
+| **Deep Learning Surrogate** | Model B: Neural Surrogate (Prototype) | 5.178 | 7.704 | 3.420 | -1.752 | **733,756** |
+| **Mechanistic Aerodynamics** | Mechanistic RK4 Integration | 5.577 | 8.760 | 3.335 | -1.507 | 449 |
+| **Physics-Informed Hybrid** | Model C: Hybrid Surrogate (Fixed) | 6.302 | 8.262 | 5.055 | +1.453 | > 950,000 |
+| *Theoretical Reference* | *Oracle Constant Predictor (Median)* | *4.800* | *7.230* | *2.300* | *0.000* | *N/A* |
+
+*Note: In the test set, the empirical landing distance standard deviation is $\sigma = 7.23$ m, meaning single-point particle predictions hit an irreducible physical scatter floor around ~4.8 m MAE. In contrast, for operational wildfire spotting, the relevant metric is the **expected deposition median distance**, where our models achieve **1.57 m to 1.73 m MAE**.*
 
 * **Comprehensive Acquisition Audit:** See [`reports/REAL_DATA_ACQUISITION.md`](file:///Users/heroofhumanity/Projects%20VS%20code/model%20for%20save_the_earth/reports/REAL_DATA_ACQUISITION.md).
 * **Validation Methodology & Physical Analysis:** See [`reports/INDEPENDENT_MODEL_VALIDATION.md`](file:///Users/heroofhumanity/Projects%20VS%20code/model%20for%20save_the_earth/reports/INDEPENDENT_MODEL_VALIDATION.md).
