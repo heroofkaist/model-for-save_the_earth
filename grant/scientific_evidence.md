@@ -7,6 +7,8 @@
 
 ---
 
+> **Evidence dossier for context, not an independent replication certificate.** Use [AI_CONTEXT.md](AI_CONTEXT.md) and [CLAIM_REGISTER.md](CLAIM_REGISTER.md) to distinguish original experimental-run aggregates, synthetic particle reconstruction, numerical ablations and unverified host activities. Never call the recorded 3D surrogate errors experimental accuracy.
+
 ## 1. Hierarchy of Scientific Evidence
 
 To maintain complete scientific honesty and prevent overclaiming, our research framework rigorously separates four distinct tiers of evidence:

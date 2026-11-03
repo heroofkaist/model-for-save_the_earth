@@ -1,25 +1,27 @@
 # KAIST Save the Earth Global Challenge — Research Expedition Plan
 
 **Project Title:** Multi-Scale Physics-Informed Learning for Wildfire Spotting and Firebrand Dispersion  
-**Applying Team:** KAIST Undergraduate / Graduate Research Team (4 Members)  
+**Applying Team:** Four KAIST students; names, majors and actual responsibilities to be confirmed by team  
 **Destination:** Australia (Canberra, Sydney, Melbourne)  
-**Duration:** 21 Days (3 Weeks, Target: Winter/Spring 2027)  
-**Budget Request:** $14,950 USD (strictly within the $15,000 program limit)  
+**Proposed Duration:** 21 days (3 weeks; travel window subject to official program and team confirmation)  
+**Indicative Budget:** USD 14,950 (planning estimate, not verified quotes; confirm official funding rules)  
 **Repository & Codebase:** [heroofkaist/model-for-save_the_earth](https://github.com/heroofkaist/model-for-save_the_earth)  
 
 ---
 
+> **WORKING EXPEDITION SCENARIO — NOT A BOOKED ITINERARY OR SUBMITTED FORM.** All meetings, field visits, sample counts, team biographies, equipment access and travel prices are tentative. Consult [AI_CONTEXT.md](AI_CONTEXT.md) and [CLAIM_REGISTER.md](CLAIM_REGISTER.md). An Australian organization appears here as a possible contact, **not a confirmed host**.
+
 ## 1. Executive Summary & Central Grant Argument
 
-Spotting by windborne burning firebrands (embers) is the dominant mechanism of catastrophic wildfire spread and structure destruction. Over the past several months, our four-member KAIST student team has independently developed an end-to-end computational wildfire framework:
+Spotting by windborne burning firebrands (embers) is the dominant mechanism of catastrophic wildfire spread and structure destruction. Over the past several months, the project has developed a computational prototype for firebrand transport and deposition:
 - Built a 3D coupled aerodynamic numerical simulator (`src/save_the_earth/physics/aerodynamics.py`).
 - Trained neural surrogates (`Model B`, `Model C`) and deep quantile networks (`Model E`).
 - Established group-validated benchmarks across 69 full-scale USDA burn tests (**0.995 m MAE** on operational run medians).
 - Performed rigorous sensitivity and physical ablation analyses.
 
-Our sensitivity analysis mathematically proves that **further progress using synthetic simulation alone is blocked by fundamental physical uncertainties**—chiefly, the extreme sensitivity of travel distance to initial detachment height ($\partial x / \partial h = +4.015$ m/m, shifting landing distance by $\pm 70\%$) and the unmeasured 6-DOF tumbling lift and combustion micro-buoyancy of natural bark.
+Our sensitivity analysis shows that **computed flight distances can depend strongly on unmeasured physical initial conditions**—including the chosen release-height scenario ($\partial x / \partial h = +4.015$ m/m, shifting landing distance by $\pm 70\%$) and the unmeasured 6-DOF tumbling lift and combustion micro-buoyancy of natural bark.
 
-**We are not asking for funding to start a project from scratch.** We have already built the computational models, identified their precise physical limitations, and designed a focused, highly realistic 3-week expedition to Australia—the global epicenter of eucalyptus firebrand spotting—to bridge our computational framework with world-class experimental and field practices.
+**We are not asking for funding to start a project from scratch.** We have already built the computational models, identified their precise physical limitations, and designed a focused, conditional three-week research expedition to Australia—the global epicenter of eucalyptus firebrand spotting—to bridge our computational framework with world-class experimental and field practices.
 
 ---
 
@@ -33,14 +35,14 @@ Australia's native eucalyptus forests present the most extreme spotting phenomen
 
 ## 3. Team Composition & Individual Roles
 
-Our four-member team brings complementary skills tailored to execute every facet of the expedition:
+The following are **proposed workstreams**, not verified academic majors or assignments. The actual four team members must approve ownership and provide truthful biographies:
 
-| Team Member | Academic Background & Project Role | Expedition Responsibilities |
-|---|---|---|
-| **Member 1 (Team Leader)** | Mechanical / Aerospace Engineering & Scientific Computing | • Coordinates meetings, institutional visits, and seminar logistics.<br>• Leads technical presentations of our computational simulator and sensitivity findings.<br>• Focuses on 6-DOF aerodynamic formulation discussions with Australian researchers. |
-| **Member 2** | Electrical Engineering / Computer Vision & Sensors | • Leads technical inspection of photogrammetric and optical setups (Stereo-PTV, PIV, high-speed camera synchronization).<br>• Documents camera geometry, lighting requirements, and spatial calibration protocols. |
-| **Member 3** | Computer Science / Machine Learning & Statistics | • Focuses on dataset architectures, uncertainty quantification, and Conformalized Quantile Regression (CQR).<br>• Evaluates accessible raw experimental databases and metadata schemas for model ingestion. |
-| **Member 4** | Civil & Environmental Engineering / Earth Systems | • Focuses on forest fuel ecology, bark harvesting, and geometric characterization (aspect ratios, thickness).<br>• Interviews operational fire predictive analysts (RFS/CFA) to map real-time operational decision needs. |
+| Workstream (proposed) | Team member / major | Expected responsibility, subject to team approval |
+| --- | --- | --- |
+| Research coordination and physical modeling | **TBD by team** | Prepare questions on drag, lift, initial conditions; coordinate outreach with consent |
+| Experimental measurement and data quality | **TBD by team** | Review optical tracking, timing, calibration, airflow and documentation methods |
+| Statistical validation and reproducibility | **TBD by team** | Assess usable datasets, grouped evaluation, distributional shift and limitations |
+| Wildfire impacts, field methods and synthesis | **TBD by team** | Connect laboratory work to practical wildfire resilience and environmental context |
 
 ---
 
@@ -98,7 +100,7 @@ WEEK 3: MELBOURNE & TECHNICAL SYNTHESIS (Forestry & Experimental Roadmap)
 
 ## 6. Realistic Budget Justification (Strictly Within $15,000 USD Limit)
 
-The budget is rigorously calculated based on real student travel rates, modest shared university accommodations, and standard public/rail transit:
+This **illustrative budget** adds to USD 14,950 using assumptions rather than live flight or accommodation quotations. Before the official submission, the team must verify the funding ceiling, eligible spending rules, student entry requirements, exchange rates and actual prices:
 
 | Category | Detailed Itemization | Cost (USD) |
 |---|---|---:|
@@ -109,7 +111,7 @@ The budget is rigorously calculated based on real student travel rates, modest s
 | **Field Sampling & Safety Tools** | Precision digital micrometers, portable flatbed scanner, sample bags, field PPE, laser rangefinder | $450 |
 | **Travel Insurance & Visa Costs** | Australian Subclass 600 / ETA visas and student medical travel insurance (4 × $190) | $760 |
 | **Contingency / Emergency Buffer** | Reserved for unforeseen transit adjustments or logistics | $340 |
-| **TOTAL EXPEDITION BUDGET** | **Fully compliant with KAIST Global Challenge maximum ceiling** | **$14,950** |
+| **TOTAL EXPEDITION BUDGET** | **Illustrative total; official program conditions must be verified** | **$14,950** |
 
 ---
 
@@ -132,9 +134,9 @@ Rather than promising multi-year laboratory campaigns, our expedition delivers c
 
 | Risk Scenario | Probability | Impact | Mitigation & Backup Strategy |
 |---|---|---|---|
-| **Laboratory Access Restriction:** Security or facility maintenance prevents entry to specialized wind tunnels. | Medium | Moderate | Pre-schedule academic seminar exchanges at UNSW Canberra and University of Melbourne. These university research groups maintain active computational and desktop fire dynamics labs with open academic access. |
-| **Target Personnel Unavailable:** Key researchers deployed to active field monitoring or remote conferences. | Medium | Low | We have established a multi-institution network across Canberra, Sydney, and Melbourne. Secondary contacts (research fellows, lab managers, and senior doctoral candidates) are included in all meeting requests. |
-| **Extreme Weather / Bushfire Restrictions:** Active fire bans restrict entry into specific forest parks during Week 2. | Low | Low | Field sampling will take place exclusively in designated public non-fire botanical gardens (e.g., Australian National Botanic Gardens in Canberra, Royal Botanic Garden Sydney) and safe lowland reserves under local permits. |
+| **Laboratory Access Restriction:** Security or facility maintenance prevents entry to specialized wind tunnels. | Medium | Moderate | Pre-schedule academic seminar exchanges at UNSW Canberra and University of Melbourne. University visits are likewise subject to permission; remote technical discussions and published method reviews are the fallback. |
+| **Target Personnel Unavailable:** Key researchers deployed to active field monitoring or remote conferences. | Medium | Low | We have identified potential research contacts in Canberra, Sydney, and Melbourne, but confirmed meetings and access are still required. Secondary contacts (research fellows, lab managers, and senior doctoral candidates) are included in all meeting requests. |
+| **Extreme Weather / Bushfire Restrictions:** Active fire bans restrict entry into specific forest parks during Week 2. | Low | Low | No material collection in protected areas or botanical gardens without explicit written permission. Desk-based morphology studies and observation-only visits are the fallback. |
 | **Budget Fluctuation:** Foreign exchange rate shifts between USD and AUD. | Low | Low | Accommodations and intercity rail will be pre-booked upon grant award; a $340 cash contingency is built into the budget. |
 
 ---
