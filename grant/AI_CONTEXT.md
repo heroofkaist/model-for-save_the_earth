@@ -67,22 +67,21 @@ These are **unresolved; do not invent**:
 - Actual full names, KAIST statuses, majors, prior contributions, team lead, and agreement on division of roles.
 - Official program form(s), exact evaluation rubric, date/travel window, spending rules, word/page limits and application submission instructions.
 - Target host contact history, invitations/availability, and agreed access conditions. A proposed facility is not a confirmed appointment.
-- Realistic transportation/accommodation quotes and permitted expense categories. The draft **USD 14,950** is a planning estimate, not independently verified live prices.
+- Realistic transportation/accommodation quotes and permitted expense categories. Any previously suggested budget is an unverified estimate; the team must calculate a new one from current rules and quotes.
 - Safety/permission path for any park visit, sample collection or experiment; visas and any restrictions.
 - Final expedition objectives, deliverable counts, route, accessible fallbacks and team review/approval.
 
-The existing [expedition plan](australia_expedition_plan.md) is a **working scenario**, not a confirmed calendar. Its example academic specializations and proposed sample counts are placeholders; do not copy them as facts about team members.
+This repository is a scientific handoff, not the final application or a confirmed trip schedule. The team will prepare its own itinerary and biographies from official instructions and actual agreements.
 
 ## 6. How a future writing assistant should use this repository
 
 Read in this order:
 
 1. **This file**, then [CLAIM_REGISTER.md](CLAIM_REGISTER.md).
-2. [research_summary.md](research_summary.md) for *draft narrative only*.
-3. [scientific_evidence.md](scientific_evidence.md) and [model_limitations.md](model_limitations.md).
-4. Machine-readable [synthetic trajectory metrics](../reports/trajectory_evaluation_metrics.json), [reconstructed-particle metrics](../reports/usda_particle_evaluation_metrics.json), [Model E metrics](../reports/experimental_training_metrics.json), and [ablation results](../reports/physics_ablation_results.json).
-5. [raw-source audit](../reports/REAL_DATA_ACQUISITION.md), [source registry](../data/manifests/external_validation_sources.json), and [code](../src/save_the_earth/).
-6. [draft expedition itinerary](australia_expedition_plan.md), validated against the **official application instructions** and actual four-person team inputs.
+2. [scientific_evidence.md](scientific_evidence.md) and [model_limitations.md](model_limitations.md).
+3. Machine-readable [synthetic trajectory metrics](../reports/trajectory_evaluation_metrics.json), [reconstructed-particle metrics](../reports/usda_particle_evaluation_metrics.json), [Model E metrics](../reports/experimental_training_metrics.json), and [ablation results](../reports/physics_ablation_results.json).
+4. [raw-source audit](../reports/REAL_DATA_ACQUISITION.md), [source registry](../data/manifests/external_validation_sources.json), and [code](../src/save_the_earth/).
+5. [Australian research leads](../docs/AUSTRALIA_RESEARCH_PLAN.md), followed by an itinerary developed by the team from the official KAIST application rules.
 
 Use the repository as **supporting technical evidence**, not as proof that all proposed visits, citations, statistics, or biographies have been independently verified. Where a narrative conflicts with a machine-readable result or the actual implementation, prefer the latter and flag the discrepancy. Keep evidence, assumption, hypothesis, and proposed activity clearly separated.
 
@@ -96,10 +95,10 @@ Use the repository's **actual generated research graphics**, not decorative stoc
 
 | Figure | Source | Essential caption caveat |
 | --- | --- | --- |
-| Physical-mechanism ablation | [physics_ablation_comparison.png](figures/physics_ablation_comparison.png) | Numerical differences between *assumed mechanisms*; not experimental validation |
-| Flight sensitivity | [physics_sensitivity.png](figures/physics_sensitivity.png) | Parameter sensitivity in declared numerical scenarios |
-| Particle-model error comparison | [usda_model_comparison_particle_mae.png](figures/usda_model_comparison_particle_mae.png) | Against **moment-matched reconstructed synthetic particles**, not original USDA catch logs |
-| By-wind error comparison | [usda_error_by_wind_speed.png](figures/usda_error_by_wind_speed.png) | Same reconstructed-particle benchmark; not a real-world 3D test |
+| Physical-mechanism ablation | [physics_ablation_comparison.png](../reports/figures/physics_ablation_comparison.png) | Numerical differences between *assumed mechanisms*; not experimental validation |
+| Flight sensitivity | [physics_sensitivity.png](../reports/figures/physics_sensitivity.png) | Parameter sensitivity in declared numerical scenarios |
+| Particle-model error comparison | [usda_model_comparison_particle_mae.png](../reports/figures/usda_model_comparison_particle_mae.png) | Against **moment-matched reconstructed synthetic particles**, not original USDA catch logs |
+| By-wind error comparison | [usda_error_by_wind_speed.png](../reports/figures/usda_error_by_wind_speed.png) | Same reconstructed-particle benchmark; not a real-world 3D test |
 
 Verify figure labels and checkpoint versions against the associated JSON outputs before quoting precise numbers. An appropriate grant graphic should make the **unresolved measurement question** visible rather than exaggerating a synthetic accuracy score.
 
