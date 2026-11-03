@@ -11,9 +11,11 @@
 
 ---
 
+> **WORKING NARRATIVE — NOT THE FINAL KAIST APPLICATION.** Read [AI_CONTEXT.md](AI_CONTEXT.md) and [CLAIM_REGISTER.md](CLAIM_REGISTER.md) before quoting numbers, assigning team roles, or promising visits. All itinerary, budget, biography and facility-access details require team/host/official-form confirmation.
+
 ## 1. Executive Summary & Societal Urgency
 
-Wildfire spotting—the ignition of secondary fires ahead of the main fire front by windborne burning embers (firebrands)—is the single most catastrophic driver of uncontrollable wildfire escalation. Firebrands breach defensive containment lines, ignite residential structures, and cause sudden entrapment of wildland firefighters. Despite decades of operational wildfire modeling, current operational fire spread simulators (e.g., FARSITE, Prometheus, BehavePlus) rely on empirical formulas developed in the 1970s that assume spherical, cold, non-tumbling particles, underestimating spotting distances by up to 200–400% in extreme conditions.
+Wildfire spotting—the ignition of secondary fires ahead of the main fire front by windborne burning embers (firebrands)—is an important mechanism of rapid secondary ignition and wildfire escalation. Firebrands breach defensive containment lines, ignite residential structures, and cause sudden entrapment of wildland firefighters. Despite decades of operational wildfire modeling, some operational fire-spread methods simplify long-range firebrand dynamics; the scale and direction of their errors depend on the wildfire scenario and require independent assessment.
 
 Over the past research campaign, our 4-member KAIST student team has independently engineered an open-source computational framework that bridges fluid-particle aerodynamics and machine learning:
 1. Built a **3D coupled aerodynamic RK4 integration engine** incorporating atmospheric boundary-layer shear, convective plume decay, aspect-ratio dependent drag, tumbling lift, and combustion buoyancy.
@@ -53,15 +55,15 @@ To ensure scientific honesty and prevent overclaiming, our repository strictly c
 
 ## 3. The Central Grant Argument: Why Travel to Australia Is Essential
 
-Our mathematical sensitivity analysis proves that **further progress through synthetic modeling alone is fundamentally blocked**:
+Our numerical sensitivity analysis shows that **predictions can depend strongly on physical inputs that are not measured in the currently accessible datasets**:
 - Detachment height sensitivity is extreme: $\frac{\partial x}{\partial h} = \mathbf{+4.015 \text{ m/m}}$. Across a 4-foot panel ($h \in [0.2, 2.4]$ m), predicted landing distance varies from **3.17 m to 10.77 m** ($\pm 70\%$).
 - Literature parameterizations of tumbling lift ($C_l \approx 0.18 - 0.35$) and combustion micro-buoyancy ($\eta_{\text{buoy}} \approx 1.18$) shift simulated distances by **+7.4% to +35.6%**, yet exist only as simplified approximations in current code.
 - **Why Australia:** Native Australian eucalyptus forests (stringybark, ribbon bark) generate the most extreme spotting in the world (5–30+ km). Australian research institutions (CSIRO, UNSW Canberra, University of Melbourne) lead the world in vertical wind tunnel testing and bushfire dynamics.
 
-By traveling to Australia for 3 weeks, our team will:
+If proposed research meetings, field activities and permissions can be arranged, our three-week visit would allow the team to:
 - Consult directly with leading wildland fire researchers on vertical wind tunnel and optical tracking methodologies.
-- Inspect experimental apparatus (air conditioning, illumination, high-speed camera placement) to understand how untethered embers are tracked in practice.
-- Conduct physical morphological field sampling of naturally shed eucalyptus stringybark and candlebark to replace assumed aspect ratios with measured Australian fuel distributions.
+- Seek authorized access to experimental methods and apparatus (air conditioning, illumination, high-speed camera placement) to understand how untethered embers are tracked in practice.
+- Explore permitted physical morphological field sampling of naturally shed eucalyptus stringybark and candlebark to replace assumed aspect ratios with measured Australian fuel distributions.
 - Interview operational Fire Behavior Analysts (RFS/CFA) to ensure our models address real-world tactical warning needs.
 
 ---
