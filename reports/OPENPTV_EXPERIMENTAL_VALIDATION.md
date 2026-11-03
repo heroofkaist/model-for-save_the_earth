@@ -94,7 +94,7 @@ The resulting measurement volume spans:
 
 ## 6. Track Reconstruction & Quality Control Audit
 
-The importer implemented in [`src/save_the_earth/data/openptv.py`](file:///Users/heroofhumanity/Projects%20VS%20code/model%20for%20save_the_earth/src/save_the_earth/data/openptv.py) verified bidirectional link reciprocity:
+The importer implemented in [`src/save_the_earth/data/openptv.py`](../src/save_the_earth/data/openptv.py) verified bidirectional link reciprocity:
 
 $$\text{pt}_i \in \text{frame}_t \text{ with } \text{next} = j \iff \text{pt}_j \in \text{frame}_{t+1} \text{ with } \text{prev} = i$$
 
@@ -188,7 +188,7 @@ This demonstrates that over a short observation window ($0.05 - 0.10\,\text{s}$)
 
 ## 11. Diagnostic Figures
 
-Four high-resolution diagnostic plots were generated in [`reports/figures/`](file:///Users/heroofhumanity/Projects%20VS%20code/model%20for%20save_the_earth/reports/figures/):
+Four high-resolution diagnostic plots were generated in [`reports/figures/`](figures/):
 
 1. `openptv_reconstructed_3d_tracks.png`: Complete 3D visualization of all 68 multi-frame connected particle tracks inside the calibrated measurement volume.
 2. `openptv_tracking_continuity.png`: Track length distribution histogram and total observed travel distance (mm).
