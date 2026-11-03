@@ -24,8 +24,8 @@
       "n": 8841,
       "mae_m": 4.889828319551506,
       "rmse_m": 7.866364766242454,
-      "median_ae_m": 2.664447959927437,
-      "bias_m": -2.9295988991699313
+      "median_ae_m": 2.664447959927439,
+      "bias_m": -2.929598899169931
     },
     "Prospective Gradient Boosting": {
       "n": 8841,
@@ -54,6 +54,13 @@
       "rmse_m": 8.262457166713702,
       "median_ae_m": 5.05483380535971,
       "bias_m": 1.4527148711417042
+    },
+    "Model E: Deep Experimental": {
+      "n": 8841,
+      "mae_m": 5.239519483500152,
+      "rmse_m": 8.507750958735286,
+      "median_ae_m": 2.5345905962184463,
+      "bias_m": -4.384835683598423
     }
   },
   "model_metrics_by_fuel_family": {
@@ -80,8 +87,8 @@
         "n": 8841,
         "mae_m": 4.889828319551506,
         "rmse_m": 7.866364766242454,
-        "median_ae_m": 2.664447959927437,
-        "bias_m": -2.9295988991699313
+        "median_ae_m": 2.664447959927439,
+        "bias_m": -2.929598899169931
       }
     },
     "Prospective Gradient Boosting": {
@@ -118,6 +125,15 @@
         "rmse_m": 8.262457166713702,
         "median_ae_m": 5.05483380535971,
         "bias_m": 1.4527148711417042
+      }
+    },
+    "Model E: Deep Experimental": {
+      "structural": {
+        "n": 8841,
+        "mae_m": 5.239519483500152,
+        "rmse_m": 8.507750958735286,
+        "median_ae_m": 2.5345905962184463,
+        "bias_m": -4.384835683598423
       }
     }
   },
@@ -179,9 +195,9 @@
       "11.17 m/s": {
         "n": 3084,
         "mae_m": 4.334524652532172,
-        "rmse_m": 7.079703922620165,
-        "median_ae_m": 2.5798105199523222,
-        "bias_m": -1.771426331017106
+        "rmse_m": 7.079703922620164,
+        "median_ae_m": 2.579810519952323,
+        "bias_m": -1.7714263310171048
       },
       "17.88 m/s": {
         "n": 3868,
@@ -282,15 +298,40 @@
         "median_ae_m": 8.457661169229201,
         "bias_m": 4.649341499387348
       }
+    },
+    "Model E: Deep Experimental": {
+      "5.36 m/s": {
+        "n": 1889,
+        "mae_m": 4.077455533609631,
+        "rmse_m": 6.982884031611871,
+        "median_ae_m": 1.8833806736380936,
+        "bias_m": -3.723302220315413
+      },
+      "11.17 m/s": {
+        "n": 3084,
+        "mae_m": 4.459337720699808,
+        "rmse_m": 7.6224517464961234,
+        "median_ae_m": 2.165012010958253,
+        "bias_m": -3.2385697309112422
+      },
+      "17.88 m/s": {
+        "n": 3868,
+        "mae_m": 6.429079813856783,
+        "rmse_m": 9.762338226155228,
+        "median_ae_m": 3.39086014018672,
+        "bias_m": -5.621836953047457
+      }
     }
   },
   "timing_and_throughput": {
-    "rk4_sec": 19.67354416847229,
-    "rk4_particles_per_sec": 449.38522130486723,
-    "surrogate_b_sec": 0.012048959732055664,
-    "surrogate_b_particles_per_sec": 733756.290717692,
-    "surrogate_c_sec": 0.00894308090209961,
-    "surrogate_c_particles_per_sec": 988585.4882431352
+    "rk4_sec": 18.9134681224823,
+    "rk4_particles_per_sec": 467.44467713410893,
+    "surrogate_b_sec": 0.017208099365234375,
+    "surrogate_b_particles_per_sec": 513769.6971846597,
+    "surrogate_c_sec": 0.008846759796142578,
+    "surrogate_c_particles_per_sec": 999348.9372069207,
+    "surrogate_e_sec": 0.015172958374023438,
+    "surrogate_e_particles_per_sec": 582681.3586423633
   },
   "artifacts_generated": [
     "reports/figures/usda_particle_dispersion_by_fuel.png",

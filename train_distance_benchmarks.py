@@ -21,7 +21,7 @@ import os
 from pathlib import Path
 
 import numpy as np
-from sklearn.linear_model import Ridge
+from sklearn.linear_model import Ridge, HuberRegressor
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, HistGradientBoostingRegressor
 from sklearn.model_selection import GroupKFold
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
@@ -141,6 +141,7 @@ def main():
         "Baseline_Global_Median": lambda: None,
         "Prospective_Ridge": lambda: Ridge(alpha=10.0),
         "Prospective_Weighted_Ridge": lambda: Ridge(alpha=10.0),
+        "Prospective_Huber_Regressor": lambda: HuberRegressor(alpha=1.0, epsilon=1.35),
         "Prospective_Random_Forest": lambda: RandomForestRegressor(n_estimators=100, max_depth=2, random_state=args.seed),
         "Prospective_Gradient_Boosting": lambda: GradientBoostingRegressor(n_estimators=60, max_depth=2, learning_rate=0.05, random_state=args.seed),
         "Prospective_HistGradientBoosting": lambda: HistGradientBoostingRegressor(l2_regularization=1.0, max_iter=60, random_state=args.seed),
@@ -169,6 +170,11 @@ def main():
         m_wridge = Ridge(alpha=10.0).fit(X_tr, y_tr, sample_weight=w_tr)
         p_wridge = np.maximum(0, m_wridge.predict(X_va))
         oof_predictions["Prospective_Weighted_Ridge"][val_idx] = p_wridge
+
+        # Huber Regressor (Robust to heavy-tailed wind tunnel dispersion)
+        m_huber = HuberRegressor(alpha=1.0, epsilon=1.35).fit(X_tr, y_tr, sample_weight=w_tr)
+        p_huber = np.maximum(0, m_huber.predict(X_va))
+        oof_predictions["Prospective_Huber_Regressor"][val_idx] = p_huber
 
         # Random Forest (depth=2)
         m_rf = RandomForestRegressor(n_estimators=100, max_depth=2, random_state=args.seed).fit(X_tr, y_tr)
@@ -247,6 +253,17 @@ def main():
         "test": compute_metrics(y_test, p_test_ridge)
     }
     test_predictions_dict["pred_prospective_ridge"] = p_test_ridge.tolist()
+
+    # Prospective Huber Regressor
+    model_huber = HuberRegressor(alpha=1.0, epsilon=1.35).fit(X_pro_dev, y_dev, sample_weight=weights_dev)
+    p_test_huber = np.maximum(0, model_huber.predict(X_pro_test))
+    results["Prospective_Huber_Regressor"] = {
+        "description": "Robust linear regression minimizing Huber loss with sample weighting.",
+        "prospective": True,
+        "cv": cv_results["Prospective_Huber_Regressor"],
+        "test": compute_metrics(y_test, p_test_huber)
+    }
+    test_predictions_dict["pred_prospective_huber"] = p_test_huber.tolist()
 
     # Prospective Random Forest
     model_rf = RandomForestRegressor(n_estimators=100, max_depth=2, random_state=args.seed).fit(X_pro_dev, y_dev)

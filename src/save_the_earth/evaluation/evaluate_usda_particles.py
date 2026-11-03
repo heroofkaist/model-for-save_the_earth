@@ -43,11 +43,14 @@ from src.save_the_earth.models.trajectory_models import (
     NeuralTrajectorySurrogate,
     PhysicsInformedHybridSurrogate,
 )
+from src.save_the_earth.models.experimental_surrogate import ExperimentalDistanceNet
+from src.save_the_earth.training.train_experimental_surrogate import extract_features as extract_experimental_features
 from src.save_the_earth.training.train_surrogate import compute_ballistic_baseline
 
 DATA_PATH = PROJECT_ROOT / "data" / "processed" / "usda_individual_firebrands.csv"
 CHECKPOINT_B = PROJECT_ROOT / "checkpoints" / "best_trajectory_model.pt"
 CHECKPOINT_C = PROJECT_ROOT / "checkpoints" / "best_hybrid_surrogate.pt"
+CHECKPOINT_E = PROJECT_ROOT / "checkpoints" / "best_experimental_model.pt"
 FIGURES_DIR = PROJECT_ROOT / "reports" / "figures"
 METRICS_OUT = PROJECT_ROOT / "reports" / "usda_particle_evaluation_metrics.json"
 
@@ -236,7 +239,7 @@ def plot_model_comparison(results: Dict[str, Dict[str, float]], out_path: Path):
     maes = [results[m]["mae_m"] for m in models]
     labels = [m.replace("Prospective ", "Prosp. ").replace("Model B: ", "").replace("Model C: ", "").replace("Mechanistic ", "") for m in models]
 
-    colors = ["#7f8c8d", "#2980b9", "#3498db", "#1abc9c", "#e67e22", "#9b59b6", "#2c3e50"]
+    colors = ["#7f8c8d", "#2980b9", "#3498db", "#1abc9c", "#e67e22", "#9b59b6", "#8e44ad", "#27ae60"]
     x = np.arange(len(models))
 
     bars = plt.bar(x, maes, color=colors[:len(models)], width=0.58, edgecolor="black", alpha=0.9)
@@ -268,11 +271,17 @@ def plot_error_by_wind_speed(
     regimes = [f"{w:.2f} m/s" for w in unique_winds]
 
     plt.figure(figsize=(9, 5), dpi=300)
-    width = 0.2
+    width = 0.16
     x = np.arange(len(unique_winds))
 
-    selected_models = ["Prospective Gradient Boosting", "Mechanistic RK4 Physics", "Model B: Neural Surrogate", "Model C: Hybrid Surrogate"]
-    colors = ["#1abc9c", "#e67e22", "#9b59b6", "#8e44ad"]
+    selected_models = [
+        "Prospective Gradient Boosting",
+        "Mechanistic RK4 Physics",
+        "Model B: Neural Surrogate",
+        "Model C: Hybrid Surrogate",
+        "Model E: Deep Experimental",
+    ]
+    colors = ["#1abc9c", "#e67e22", "#9b59b6", "#8e44ad", "#27ae60"]
 
     for i, (name, col) in enumerate(zip(selected_models, colors)):
         if name not in preds_dict:
@@ -282,7 +291,7 @@ def plot_error_by_wind_speed(
         for w in unique_winds:
             mask = (wind_speeds == w)
             regime_maes.append(float(np.mean(np.abs(y_p[mask] - y_true[mask]))))
-        plt.bar(x + (i - 1.5) * width, regime_maes, width=width, label=name, color=col, edgecolor="black", alpha=0.85)
+        plt.bar(x + (i - 2.0) * width, regime_maes, width=width, label=name, color=col, edgecolor="black", alpha=0.85)
 
     plt.xticks(x, regimes, fontsize=10)
     plt.xlabel("Nominal Wind Speed", fontsize=11)
@@ -353,6 +362,22 @@ def main():
     t1_c = time.time()
     print(f"Model C evaluation finished in {t1_c - t0_c:.2f} s ({len(test_rows)/(t1_c - t0_c):.1f} particles/s)")
 
+    # 8. Model E: Deep Experimental Surrogate (Trained directly on USDA Empirical Particles)
+    print("Evaluating Model E (Deep Experimental Surrogate)...")
+    t0_e = time.time()
+    checkpoint_e = torch.load(CHECKPOINT_E, map_location="cpu", weights_only=False)
+    model_e = ExperimentalDistanceNet(in_dim=10, hidden_dim=128, dropout=0.08)
+    model_e.load_state_dict(checkpoint_e["model_state_dict"])
+    model_e.eval()
+
+    X_te_e = np.array([extract_experimental_features(r) for r in test_rows], dtype=np.float32)
+    X_te_e_n = (X_te_e - checkpoint_e["mean_x"]) / checkpoint_e["std_x"]
+    with torch.no_grad():
+        preds_e = model_e(torch.from_numpy(X_te_e_n)).numpy()
+        y_pred_e = preds_e[:, 1]  # q50 median
+    t1_e = time.time()
+    print(f"Model E evaluation finished in {t1_e - t0_e:.2f} s ({len(test_rows)/(t1_e - t0_e):.1f} particles/s)")
+
     all_predictions = {
         "Global Median Baseline": y_pred_median,
         "Prospective Ridge": y_pred_ridge,
@@ -361,6 +386,7 @@ def main():
         "Mechanistic RK4 Physics": y_pred_rk4,
         "Model B: Neural Surrogate": y_pred_b,
         "Model C: Hybrid Surrogate": y_pred_c,
+        "Model E: Deep Experimental": y_pred_e,
     }
 
     # Compute overall test metrics
@@ -420,6 +446,8 @@ def main():
             "surrogate_b_particles_per_sec": len(test_rows) / (t1_b - t0_b),
             "surrogate_c_sec": t1_c - t0_c,
             "surrogate_c_particles_per_sec": len(test_rows) / (t1_c - t0_c),
+            "surrogate_e_sec": t1_e - t0_e,
+            "surrogate_e_particles_per_sec": len(test_rows) / (t1_e - t0_e),
         },
         "artifacts_generated": [
             str(disp_path.relative_to(PROJECT_ROOT)),

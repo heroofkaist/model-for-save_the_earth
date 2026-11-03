@@ -1,0 +1,12 @@
+{
+  "model_name": "ExperimentalDistanceNet (Model E)",
+  "dataset": "USDA JFSP 15-1-04-4 Canonical Particle Observations",
+  "training_epochs": 25,
+  "elapsed_seconds": 5.818436861038208,
+  "val_mae_m": 2.5581696033477783,
+  "test_mae_m": 5.239519119262695,
+  "test_rmse_m": 8.50775146484375,
+  "test_bias_m": -4.384835720062256,
+  "test_coverage_80_pct": 60.42302906910982,
+  "checkpoint_path": "checkpoints/best_experimental_model.pt"
+}
