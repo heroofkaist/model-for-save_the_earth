@@ -4,9 +4,11 @@ An experimentally grounded, group-validated computational framework for predicti
 
 Repository: [heroofkaist/model-for-save_the_earth](https://github.com/heroofkaist/model-for-save_the_earth)  
 Primary Branch: `main`  
-Development Branch: `feature/independent-experimental-validation`
+Grant-writing handoff: **[grant/AI_CONTEXT.md](grant/AI_CONTEXT.md)** · **[Evidence and claim register](grant/CLAIM_REGISTER.md)**
 
 ---
+
+> **For the KAIST Global Challenge application:** Start with the [research handoff](grant/AI_CONTEXT.md) and [claim register](grant/CLAIM_REGISTER.md), not isolated accuracy numbers from an older report. The 60,370 USDA-derived particle rows are **moment-matched synthetic reconstructions**, not original measured particle catch records. Full real-world 3D trajectory accuracy has not yet been established. The team writes and approves the final official application separately.
 
 ## ⚡ Quickstart: Single-Command Execution
 
