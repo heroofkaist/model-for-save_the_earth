@@ -48,9 +48,11 @@ class TestPipelineRunner(unittest.TestCase):
                 return True
             return original_exists(path)
 
-        with patch("run_pipeline.os.path.exists", side_effect=exists_stub), \\
-             patch("train_distance_benchmarks.load_dataset", return_value=rows), \\
-             contextlib.redirect_stdout(output):
+        with (
+            patch("run_pipeline.os.path.exists", side_effect=exists_stub),
+            patch("train_distance_benchmarks.load_dataset", return_value=rows),
+            contextlib.redirect_stdout(output),
+        ):
             run_pipeline.run_predict(wind=11.17, category="vegetative")
         printed = output.getvalue()
         self.assertIn("Model E omitted", printed)
