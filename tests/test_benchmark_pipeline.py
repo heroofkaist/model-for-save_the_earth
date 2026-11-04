@@ -81,5 +81,41 @@ class TestBenchmarkPipeline(unittest.TestCase):
         self.assertAlmostEqual(m["bias_m"], 0.125)
 
 
+    def test_rejects_same_experiment_in_multiple_splits(self):
+        with open(self.p_split, newline="", encoding="utf-8") as f:
+            rows = list(csv.DictReader(f))
+        # Deliberately corrupt the frozen assignment for one record.
+        target = next(x for x in rows if x["group_id"] == "g1")
+        target["split"] = "test"
+        with open(self.p_split, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=rows[0].keys())
+            writer.writeheader()
+            writer.writerows(rows)
+        with self.assertRaisesRegex(ValueError, "group leakage"):
+            load_dataset(self.p_data, self.p_split)
+
+    def test_rejects_duplicate_record_id(self):
+        with open(self.p_split, newline="", encoding="utf-8") as f:
+            rows = list(csv.DictReader(f))
+        rows.append(dict(rows[0]))
+        with open(self.p_split, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=rows[0].keys())
+            writer.writeheader()
+            writer.writerows(rows)
+        with self.assertRaisesRegex(ValueError, "duplicate record_id"):
+            load_dataset(self.p_data, self.p_split)
+
+    def test_rejects_group_id_inconsistent_with_data(self):
+        with open(self.p_split, newline="", encoding="utf-8") as f:
+            rows = list(csv.DictReader(f))
+        rows[0]["group_id"] = "wrong-group"
+        with open(self.p_split, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=rows[0].keys())
+            writer.writeheader()
+            writer.writerows(rows)
+        with self.assertRaisesRegex(ValueError, "experiment group mismatch"):
+            load_dataset(self.p_data, self.p_split)
+
+
 if __name__ == "__main__":
     unittest.main()
