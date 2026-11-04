@@ -39,14 +39,36 @@ def load_dataset(data_path, split_path):
     with open(split_path, newline="", encoding="utf-8") as f:
         split_rows = list(csv.DictReader(f))
 
-    split_map = {r["record_id"]: r["split"] for r in split_rows}
-
+    # Reject duplicated IDs and conflicting groups instead of silently overwriting a
+    # frozen split. These checks prevent accidental leakage between experiments.
+    split_map = {}
+    for entry in split_rows:
+        rid = entry["record_id"]
+        if rid in split_map:
+            raise ValueError(f"duplicate record_id in split manifest: {rid}")
+        split_map[rid] = entry
+    observed_ids = set()
+    groups_to_split = {}
     records = []
     for r in data_rows:
         rid = r["record_id"]
+        if rid in observed_ids:
+            raise ValueError(f"duplicate record_id in observations: {rid}")
+        observed_ids.add(rid)
         if rid not in split_map:
             continue
-        part = split_map[rid]
+        entry = split_map[rid]
+        part = entry["split"]
+        if part not in ("train", "validation", "test"):
+            raise ValueError(f"invalid frozen split for {rid}: {part}")
+        if entry.get("source_id") and entry["source_id"] != r["source_id"]:
+            raise ValueError(f"source_id mismatch for {rid}")
+        if entry.get("group_id") and entry["group_id"] != r["experiment_id"]:
+            raise ValueError(f"experiment group mismatch for {rid}")
+        group = (r["source_id"], r["experiment_id"])
+        if group in groups_to_split and groups_to_split[group] != part:
+            raise ValueError(f"group leakage across frozen splits: {group}")
+        groups_to_split[group] = part
         records.append({
             "record_id": rid,
             "split": part,
@@ -114,7 +136,7 @@ def main():
 
     y_dev = np.array([r["landing_distance_m"] for r in dev_recs])
     y_test = np.array([r["landing_distance_m"] for r in test_recs])
-    groups_dev = np.array([r["experiment_id"] for r in dev_recs])
+    groups_dev = np.array([f'{r["source_id"]}:{r["experiment_id"]}' for r in dev_recs])
 
     # Sample weights proportional to sqrt(sample_size)
     sample_sizes_dev = np.array([r["sample_size"] for r in dev_recs])
@@ -153,8 +175,23 @@ def main():
 
     for fold, (tr_idx, val_idx) in enumerate(gkf.split(dev_recs, y_dev, groups_dev)):
         y_tr, y_va = y_dev[tr_idx], y_dev[val_idx]
-        X_tr, X_va = X_pro_dev[tr_idx], X_pro_dev[val_idx]
-        w_tr = weights_dev[tr_idx]
+        # Fold-local fitting: do NOT let validation-fold wind statistics or
+        # categorical values influence training preprocessing.
+        fold_scaler = StandardScaler().fit(num_dev[tr_idx])
+        fold_encoder = OneHotEncoder(
+            sparse_output=False, handle_unknown="ignore"
+        ).fit(cat_dev[tr_idx])
+        X_tr = np.column_stack([
+            fold_scaler.transform(num_dev[tr_idx]),
+            fold_encoder.transform(cat_dev[tr_idx]),
+        ])
+        X_va = np.column_stack([
+            fold_scaler.transform(num_dev[val_idx]),
+            fold_encoder.transform(cat_dev[val_idx]),
+        ])
+        # Weights, too, must be normalized from the training fold only.
+        w_tr = np.sqrt(sample_sizes_dev[tr_idx])
+        w_tr = w_tr / np.mean(w_tr)
 
         # Global median
         med_tr = np.median(y_tr)
