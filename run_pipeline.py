@@ -69,11 +69,16 @@ def run_predict(wind, category, moisture=None):
     from sklearn.ensemble import RandomForestRegressor
     from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
+    if not math.isfinite(wind) or wind < 0:
+        raise ValueError("wind speed must be a finite, nonnegative value")
+    if category not in ("vegetative", "structural"):
+        raise ValueError("fuel category must be vegetative or structural")
+
     print(f"\n================ EXPERIMENTAL FIREBRAND DISTANCE PREDICTION ================")
     print(f"Model Version: v2.0-group-cv-calibrated | Dataset: USDA JFSP 15-1-04-4 (Aggregated Runs)")
     print(f"Input Parameters: Nominal Wind = {wind:.2f} m/s | Fuel Category = {category}")
     if moisture is not None:
-        print(f"Fuel Moisture: {moisture:.1f}% (Note: validated prospective models rely on wind scaling)")
+        print(f"Fuel Moisture: {moisture:.1f}% (context only; it is NOT a predictor input for these models)")
 
     # Out-of-distribution (OOD) checks
     if wind < 3.0 or wind > 25.0:
@@ -118,68 +123,52 @@ def run_predict(wind, category, moisture=None):
     p_rf = float(np.maximum(0, rf.predict(query_X)[0]))
     p_ens = (p_ridge + p_rf) / 2.0
 
-    # Load Model E (Deep Experimental Neural Surrogate)
-    p_e_info = None
-    checkpoint_e_path = Path("checkpoints/best_experimental_model.pt")
-    if checkpoint_e_path.exists():
-        try:
-            import torch
-            from src.save_the_earth.models.experimental_surrogate import ExperimentalDistanceNet
-            from src.save_the_earth.training.train_experimental_surrogate import extract_features as extract_e_features
-            chk_e = torch.load(checkpoint_e_path, map_location="cpu", weights_only=False)
-            dim_e = len(chk_e["mean_x"])
-            m_e = ExperimentalDistanceNet(in_dim=dim_e, hidden_dim=128, dropout=0.0)
-            m_e.load_state_dict(chk_e["model_state_dict"])
-            m_e.eval()
+    # Model E is a retrospective research network. Its feature vector requires
+    # post-collection mass and area, which are unknown at release time.
+    # Never fabricate those values to produce a "prospective" inference.
 
-            sample_r = {
-                "wind_speed_m_s": wind,
-                "gust_peak_m_s": wind,
-                "moisture_content_percent": moisture if moisture is not None else 10.0,
-                "fuel_category": category,
-                "mass_kg": 5e-5,
-                "projected_area_m2": 2e-4
+    # Conformal interval belongs to the RIDGE predictor, not Huber.
+    # The saved calibration is optional; no hard-coded fallback is justified.
+    benchmark_path = Path("distance_results/benchmark_comparison.json")
+    conformal_info = None
+    if benchmark_path.is_file():
+        with benchmark_path.open(encoding="utf-8") as f:
+            benchmark = json.load(f)
+        record = benchmark.get("Conformal_Uncertainty_80", {})
+        radius = record.get("conformal_radius_m")
+        if radius is not None and math.isfinite(float(radius)) and float(radius) >= 0:
+            conformal_info = {
+                "radius": float(radius),
+                "test_coverage_pct": record.get("empirical_test_coverage_pct"),
             }
-            raw_feat = np.array([extract_e_features(sample_r)], dtype=np.float32)
-            norm_feat = (raw_feat - chk_e["mean_x"]) / chk_e["std_x"]
-            with torch.no_grad():
-                preds_e = m_e(torch.from_numpy(norm_feat)).numpy()[0]
-            p_e_info = (float(preds_e[0]), float(preds_e[1]), float(preds_e[2]))
-        except Exception:
-            p_e_info = None
-
-    # Load conformal calibration radius
-    bench_json = "distance_results/benchmark_comparison.json"
-    conformal_radius = 1.575
-    if os.path.exists(bench_json):
-        with open(bench_json) as f:
-            b_data = json.load(f)
-            conformal_radius = b_data.get("Conformal_Uncertainty_80", {}).get("conformal_radius_m", 1.575)
-
-    conf_lower = max(0.0, p_huber - conformal_radius)
-    conf_upper = p_huber + conformal_radius
-
-    # Empirical particle dispersion (individual firebrands)
-    # Average observed std in wind-tunnel water pans scales with wind: ~0.15 * wind + 0.5 m
-    est_dispersion_std = max(0.7, 0.14 * wind + 0.3)
-    p10_particle = max(0.0, p_huber - 1.28 * est_dispersion_std)
-    p90_particle = p_huber + 1.28 * est_dispersion_std
 
     print(f"Model Predictions for Experimental Landing Distance:")
     print(f"  Prospective Ridge Regression:       {p_ridge:.2f} m")
     print(f"  Prospective Huber Regressor (Robust): {p_huber:.2f} m")
     print(f"  Prospective Random Forest (depth=2): {p_rf:.2f} m")
     print(f"  Prospective Parsimonious Ensemble:  {p_ens:.2f} m")
-    if p_e_info is not None:
-        print(f"  Deep Experimental Surrogate (Model E): {p_e_info[1]:.2f} m  [80% Bounds: {p_e_info[0]:.2f} m — {p_e_info[2]:.2f} m]")
     print(f"  -------------------------------------------------------------")
-    print(f"  ★ RECOMMENDED OPERATIONAL DISTANCE: {p_huber:.2f} m")
-    print(f"  ★ 80% CONFORMAL INTERVAL (Median):  [{conf_lower:.2f} m  —  {conf_upper:.2f} m] (Radius: +/- {conformal_radius:.2f} m)")
-    print(f"  ★ ESTIMATED PARTICLE DISPERSION:    [{p10_particle:.2f} m  —  {p90_particle:.2f} m] (Spread of individual embers around median)")
+    print(f"  Laboratory run-median estimate (Huber): {p_huber:.2f} m")
+    if conformal_info is not None:
+        rad = conformal_info["radius"]
+        print(
+            f"  Nominal 80% group-CV interval around Ridge: "
+            f"[{max(0.0, p_ridge-rad):.2f}, {p_ridge+rad:.2f}] m"
+        )
+        coverage = conformal_info["test_coverage_pct"]
+        if coverage is not None:
+            print(
+                f"  Observed frozen-test coverage: {float(coverage):.1f}% "
+                "(not a guarantee on unseen fuels)"
+            )
+    else:
+        print("  No verified interval file available; interval not reported.")
+    print("  Model E omitted: requires post-deposition mass/area and reconstructed-data training.")
+    print("  Individual-ember dispersion omitted: no validated prospective distribution model.")
     print("=" * 75)
     print("⚠️  SCIENTIFIC DISCLAIMER:")
-    print("   This prediction estimates physical deposition distance in wind-tunnel water pans.")
-    print("   It does NOT predict particle thermal survival, fuel bed ignition, or macroscopic spot fires.")
+    print("   Research-only estimate of run-median wind-tunnel water-pan deposition.")
+    print("   NOT a wildfire operational forecast. Does not predict burning survival or ignition.")
     print("=" * 75)
 
 
