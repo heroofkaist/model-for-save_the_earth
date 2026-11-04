@@ -61,6 +61,10 @@ def load_dataset(data_path, split_path):
         part = entry["split"]
         if part not in ("train", "validation", "test"):
             raise ValueError(f"invalid frozen split for {rid}: {part}")
+        if r.get("data_kind") and r["data_kind"] != "measured":
+            raise ValueError(
+                f"run-level experimental benchmark refuses non-measured observations: {rid}"
+            )
         if entry.get("source_id") and entry["source_id"] != r["source_id"]:
             raise ValueError(f"source_id mismatch for {rid}")
         if entry.get("group_id") and entry["group_id"] != r["experiment_id"]:
