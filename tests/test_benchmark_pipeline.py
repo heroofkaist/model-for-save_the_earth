@@ -117,5 +117,19 @@ class TestBenchmarkPipeline(unittest.TestCase):
             load_dataset(self.p_data, self.p_split)
 
 
+    def test_rejects_synthetic_labelled_as_experimental(self):
+        with open(self.p_data, newline="", encoding="utf-8") as f:
+            rows = list(csv.DictReader(f))
+        for row in rows:
+            row["data_kind"] = "measured"
+        rows[0]["data_kind"] = "synthetic"
+        with open(self.p_data, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=rows[0].keys())
+            writer.writeheader()
+            writer.writerows(rows)
+        with self.assertRaisesRegex(ValueError, "refuses non-measured"):
+            load_dataset(self.p_data, self.p_split)
+
+
 if __name__ == "__main__":
     unittest.main()
